@@ -78,13 +78,13 @@ optimize() {
 build() {
     echo $GREEN"Building docker container"$RESET
     cd $DOCKER_DIR
-    docker build -t steem .
+    docker build --no-cache -t steem .
 }
 
 build_full() {
     echo $GREEN"Building full-node docker container"$RESET
     cd $FULL_DOCKER_DIR
-    docker build -t steem .
+    docker build --no-cache -t steem .
 }
 
 dlblocks() {
