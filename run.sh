@@ -79,12 +79,16 @@ build() {
     echo $GREEN"Building docker container"$RESET
     cd $DOCKER_DIR
     docker build --no-cache -t steem .
+    # clean image remnants
+    docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
 
 build_full() {
     echo $GREEN"Building full-node docker container"$RESET
     cd $FULL_DOCKER_DIR
     docker build --no-cache -t steem .
+    # clean image remnants
+    docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
 
 dlblocks() {
