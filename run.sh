@@ -86,6 +86,7 @@ build() {
     cd $DOCKER_DIR
     docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
     # clean image remnants
+    echo $GREEN"Removing remnant docker images"$RESET
     docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
 
@@ -94,6 +95,7 @@ build_full() {
     cd $FULL_DOCKER_DIR
     docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
     # clean image remnants
+    echo $GREEN"Removing remnant docker images"$RESET
     docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
 
