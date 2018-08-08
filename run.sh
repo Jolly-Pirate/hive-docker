@@ -9,6 +9,7 @@ DOCKER_DIR="$DIR/dkr"
 FULL_DOCKER_DIR="$DIR/dkr_fullnode"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
+STEEMD_VERSION="$2"
 
 BOLD="$(tput bold)"
 RED="$(tput setaf 1)"
@@ -30,6 +31,11 @@ fi
 if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
     echo "config.ini not found. copying example (seed)";
     cp data/witness_node_data_dir/config.ini.example data/witness_node_data_dir/config.ini
+fi
+
+if [[ $1 == "build" && $2 == "" ]]; then
+    echo $RED"Specify the steemd version to build, e.g. stable"$RESET
+	exit
 fi
 
 IFS=","
@@ -78,7 +84,7 @@ optimize() {
 build() {
     echo $GREEN"Building docker container"$RESET
     cd $DOCKER_DIR
-    docker build --no-cache -t steem .
+    docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
     # clean image remnants
     docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
@@ -86,7 +92,7 @@ build() {
 build_full() {
     echo $GREEN"Building full-node docker container"$RESET
     cd $FULL_DOCKER_DIR
-    docker build --no-cache -t steem .
+    docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
     # clean image remnants
     docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
