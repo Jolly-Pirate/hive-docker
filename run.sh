@@ -82,7 +82,7 @@ optimize() {
 }
 
 build() {
-    echo $GREEN"Building docker container"$RESET
+    echo $GREEN"Building docker container for steemd version: $STEEMD_VERSION"$RESET
     cd $DOCKER_DIR
     docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
     # clean image remnants
@@ -91,7 +91,7 @@ build() {
 }
 
 build_full() {
-    echo $GREEN"Building full-node docker container"$RESET
+    echo $GREEN"Building full-node docker container for steemd version: $STEEMD_VERSION"$RESET
     cd $FULL_DOCKER_DIR
     docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
     # clean image remnants
