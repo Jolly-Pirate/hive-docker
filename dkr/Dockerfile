@@ -1,5 +1,9 @@
 FROM ubuntu:xenial
 
+#ARG steemd_version=master
+ARG steemd_version
+RUN echo "Building steemd version: ${steemd_version}"
+
 RUN apt-get update
 # Required packages
 RUN apt-get install -y autoconf automake cmake g++ git libbz2-dev libsnappy-dev libssl-dev libtool make pkg-config python3 python3-jinja2
@@ -20,8 +24,6 @@ EXPOSE 2001
 # RPC ports
 EXPOSE 5000
 EXPOSE 8090
-
-ARG steemd_version=master
 
 RUN cd ~ && \
 	git clone https://github.com/steemit/steem.git && \
