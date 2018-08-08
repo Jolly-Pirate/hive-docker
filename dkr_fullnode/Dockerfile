@@ -33,7 +33,7 @@ RUN cd ~ && \
 	mkdir build && cd build && \
 	cmake -DCMAKE_BUILD_TYPE=Release .. -DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF && \
 	make -j$(nproc) && \
-	make install # defaults to /usr/bin
+	make install && cd .. && rm -rf build # defaults to /usr/bin
 VOLUME /steem
 WORKDIR /steem
 
