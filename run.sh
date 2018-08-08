@@ -165,13 +165,17 @@ seed_running() {
     fi
 }
 
+# Important for AppBase:
+# The default data directory is now '/root/.steemd' instead of '/steem/witness_node_data_dir'.
+# Please move your data directory to '/root/.steemd' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
+
 start() {
     echo $GREEN"Starting container..."$RESET
     seed_exists
     if [[ $? == 0 ]]; then
         docker start $DOCKER_NAME
     else
-        docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem
+        docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir
     fi
 }
 
@@ -179,7 +183,7 @@ replay() {
     echo "Removing old container"
     docker rm $DOCKER_NAME
     echo "Running steem with replay..."
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --replay
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
     echo "Started."
 }
 
