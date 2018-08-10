@@ -156,8 +156,9 @@ required-participation = 33
 # private-key = 
 
 # CUSTOM CONFIG, EDIT HERE
-witness = "witnessname"
-private-key = 5.....
+#witness = "witnessname"
+#private-key = 5.....
+
 # STMpubkey put it here to know which key pair is which on multi servers
 
 shared-file-size = 64G
@@ -167,10 +168,10 @@ plugin = witness
 
 # for the cli_wallet
 # 127.0.0.1:8090 accessible only from localhost, while 0.0.0.0:8090 accessible from external (allowed in ufw ofc)
-# comment them if not required
-webserver-ws-endpoint = 127.0.0.1:8090
-webserver-http-endpoint = 127.0.0.1:8090
-plugin = network_broadcast_api condenser_api
+# comment out if needed
+#webserver-ws-endpoint = 127.0.0.1:8090
+#webserver-http-endpoint = 127.0.0.1:8090
+#plugin = network_broadcast_api condenser_api
 
 shared-file-full-threshold = 9500
 shared-file-scale-rate = 1000
