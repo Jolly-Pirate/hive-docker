@@ -54,31 +54,64 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    start - starts steem container"
+  echo "    build - only build steem container (from docker file)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
-  echo "    replay - starts steem container (in replay mode)"
-  echo "    shm_size - resizes /dev/shm to size given, e.g. ./run.sh shm_size 10G "
-  echo "    stop - stops steem container"
-  echo "    status - show status of steem container"
-  echo "    restart - restarts steem container"
-  echo "    install_docker - install docker"
-  echo "    install - pulls latest docker image from server (no compiling)"
-  echo "    install_full - pulls latest (FULL NODE FOR RPC) docker image from server (no compiling)"
-  echo "    rebuild - builds steem container (from docker file), and then restarts it"
-  echo "    build - only builds steem container (from docker file)"
-  echo "    logs - show all logs inc. docker logs, and steem logs"
-  echo "    wallet - open cli_wallet in the container"
-  echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
   echo "    enter - enter a bash session in the container"
+  echo "    install - pull latest docker image from server (no compiling)"
+  echo "    install_docker - install docker"
+  echo "    install_full - pulls latest (FULL NODE FOR RPC) docker image from server (no compiling)"
+  echo "    install_ntp - install and configure NTP synchronization"
+  echo "    logs - show all logs inc. docker logs, and steem logs"
+  echo "    preinstall - install linux utils packages"
+  echo "    rebuild - build steem container (from docker file), and then restarts it"
+  echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
+  echo "    replay - start steem container (in replay mode)"
+  echo "    restart - restart steem container"
+  echo "    shm_size - resize /dev/shm to a given size, e.g. ./run.sh shm_size 10G"
+  echo "    start - start steem container"
+  echo "    status - show status of steem container"
+  echo "    stop - stop steem container"
+  echo "    version - get steemd version from the running container (e.g. seed or witness)"
+  echo "    wallet - open cli_wallet in the container"
   echo
   exit
 }
 
 optimize() {
-  echo    75 | sudo tee /proc/sys/vm/dirty_background_ratio
-  echo  1000 | sudo tee /proc/sys/vm/dirty_expire_centisecs
-  echo    80 | sudo tee /proc/sys/vm/dirty_ratio
-  echo 30000 | sudo tee /proc/sys/vm/dirty_writeback_centisecs
+  #echo    75 | sudo tee /proc/sys/vm/dirty_background_ratio
+  #echo  1000 | sudo tee /proc/sys/vm/dirty_expire_centisecs
+  #echo    80 | sudo tee /proc/sys/vm/dirty_ratio
+  #echo 30000 | sudo tee /proc/sys/vm/dirty_writeback_centisecs
+  echo $GREEN'Clearing caches. Current setting:' $(cat /proc/sys/vm/drop_caches)$RESET
+  echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+}
+
+version() {
+  if docker ps | grep -q seed; then
+    echo "steemd -v" | docker exec -i witness bash
+    elif docker ps | grep -q witness; then
+    echo "steemd -v" | docker exec -i witness bash
+  else
+    echo "No seed/witness container running"
+  fi
+}
+
+preinstall() {
+  sudo apt update
+  sudo apt install -y curl git wget xz-utils
+}
+
+install_ntp() {
+  sudo apt install -y ntp
+  echo "minpoll 5" | sudo tee -a /etc/ntp.conf > /dev/null
+  echo "maxpoll 7" | sudo tee -a /etc/ntp.conf > /dev/null
+  sudo systemctl enable ntp
+  sudo systemctl restart ntp
+  echo
+  echo $BOLD'NTP status'$RESET$GREEN
+  timedatectl | grep 'NTP synchronized'
+  ntptime | grep '  offset' | awk '{print $1,$2,$3}' | tr -d ','
+  echo $RESET
 }
 
 build() {
@@ -100,18 +133,11 @@ build_full() {
 }
 
 dlblocks() {
-  if [[ ! -d "$DATADIR/blockchain" ]]; then
-    mkdir "$DATADIR/blockchain"
-  fi
+  mkdir -p "$DATADIR/blockchain"
   echo "Removing old block log"
   sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log
   sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log.index
   echo "Download @gtg's block logs..."
-  if [[ ! $(command -v xz) ]]; then
-    echo "XZ not found. Attempting to install..."
-    sudo apt update
-    sudo apt install -y xz-utils
-  fi
   wget https://gtg.steem.house/get/blockchain.xz/block_log.xz -O $DATADIR/witness_node_data_dir/blockchain/block_log.xz
   echo "Decompressing block log... this may take a while..."
   xz -d $DATADIR/witness_node_data_dir/blockchain/block_log.xz -v
@@ -122,8 +148,6 @@ dlblocks() {
 }
 
 install_docker() {
-  sudo apt update
-  sudo apt install curl git
   curl https://get.docker.com | sh
   if [ "$EUID" -ne 0 ]; then
     echo "Adding user $(whoami) to docker group"
@@ -190,7 +214,7 @@ replay() {
 
 shm_size() {
   echo "Setting SHM to $1"
-  mount -o remount,size=$1 /dev/shm
+  sudo mount -o remount,size=$1 /dev/shm
 }
 
 stop() {
@@ -227,7 +251,7 @@ status() {
     echo "Container doesn't exist, thus it is NOT running. Run $0 build && $0 start"$RESET
     return
   fi
-
+  
   seed_running
   if [[ $? == 0 ]]; then
     echo "Container running?: "$GREEN"YES"$RESET
@@ -304,6 +328,15 @@ case $1 in
   ;;
   logs)
     logs
+  ;;
+  version)
+    version
+  ;;
+  preinstall)
+    preinstall
+  ;;
+  install_ntp)
+    install_ntp
   ;;
   *)
     echo "Invalid cmd"
