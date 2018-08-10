@@ -1,11 +1,11 @@
 **/*.json
-.env
+**/backup
+**/block_log*
+**/config.ini
 **/debug.log
 **/info.log
-**/config.ini
-**/backup
 **/logs
 **/node
 **/p2p
-**/block_log*
+.env
 lock
