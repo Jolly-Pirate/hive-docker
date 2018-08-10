@@ -1,6 +1,5 @@
 FROM ubuntu:xenial
 
-#ARG steemd_version=master
 ARG steemd_version
 RUN echo "Building steemd version: ${steemd_version}"
 
@@ -33,7 +32,7 @@ RUN cd ~ && \
 	mkdir build && cd build && \
 	cmake -DCMAKE_BUILD_TYPE=Release .. -DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON && \
 	make -j$(nproc) && \
-	make install && cd .. && rm -rf build # defaults to /usr/bin
+	make install && cd .. && rm -rf build # install defaults to /usr/bin
 VOLUME /steem
 WORKDIR /steem
 

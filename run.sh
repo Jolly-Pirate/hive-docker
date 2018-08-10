@@ -11,6 +11,7 @@ FULL_DOCKER_DIR="$DIR/dkr_fullnode"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
 STEEMD_VERSION="$2"
+REPLAY_FAST="$2"
 
 BOLD="$(tput bold)"
 RED="$(tput setaf 1)"
@@ -55,7 +56,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - only build steem container (from docker file)"
+  echo "    build - build steem container from docker file (pass the steemd version as argument)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
@@ -67,6 +68,7 @@ help() {
   echo "    rebuild - build steem container (from docker file), and then restarts it"
   echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
   echo "    replay - start steem container (in replay mode)"
+  echo "    replay fullfast - replay steem full node in fast mode (skip feeds older than 7 days)"
   echo "    restart - restart steem container"
   echo "    shm_size - resize /dev/shm to a given size, e.g. ./run.sh shm_size 10G"
   echo "    start - start steem container"
@@ -208,9 +210,16 @@ start() {
 replay() {
   echo "Removing old container"
   docker rm $DOCKER_NAME
-  echo "Running steem with replay..."
-  docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
-  echo "Started."
+  if [[ $REPLAY_FAST == "fullfast" ]]; then
+    LASTWEEKUTCDATE=$(date -d "-7 days" +%s)
+    echo "Replaying full node in fast mode (skipping feeds older than 7 days)"
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --follow-start-feeds=$LASTWEEKUTCDATE
+    echo "Started."
+  else
+    echo "Running steem with replay..."
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
+    echo "Started."
+  fi
 }
 
 shm_size() {
