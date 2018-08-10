@@ -6,7 +6,7 @@ log-file-appender = {"appender":"p2p","file":"logs/p2p/p2p.log"}
 
 # Logger definition json: {"name", "level", "appender"}
 log-logger = {"name":"default","level":"info","appender":"stderr"}
-log-logger = {"name":"p2p","level":"info","appender":"stderr"}
+#log-logger = {"name":"p2p","level":"info","appender":"stderr"}
 
 # Whether to print backtrace on SIGSEGV
 backtrace = yes
