@@ -2,6 +2,7 @@
 #
 # Steem node manager
 # Released under GNU AGPL by Someguy123
+# Modified by Jolly-Pirate
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
