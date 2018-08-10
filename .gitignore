@@ -2,6 +2,7 @@
 **/backup
 **/block_log*
 **/config.ini
+**/core
 **/debug.log
 **/info.log
 **/logs
