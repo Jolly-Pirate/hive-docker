@@ -35,7 +35,7 @@ if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
   cp data/witness_node_data_dir/config.ini.example.stable data/witness_node_data_dir/config.ini
 fi
 
-if [[ $1 == "build" && $2 == "" ]]; then
+if [[ $1 == *"build"* && $2 == "" ]]; then
   echo $RED"Specify the steemd version to build, e.g. stable"$RESET
   exit
 fi
