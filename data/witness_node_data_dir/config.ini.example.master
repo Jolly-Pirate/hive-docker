@@ -161,7 +161,7 @@ required-participation = 33
 
 # STMpubkey put it here to know which key pair is which on multi servers
 
-shared-file-size = 64G
+shared-file-size = 62G
 shared-file-dir = /shm/
 
 plugin = witness
