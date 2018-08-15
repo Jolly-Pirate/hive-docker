@@ -176,6 +176,9 @@ plugin = witness
 shared-file-full-threshold = 9500
 shared-file-scale-rate = 1000
 
+# comment for a  witness node
+p2p-endpoint = 0.0.0.0:2001
+
 # log-logger = {"name":"default","level":"debug","appender":"stderr"}
 # debug mode to show the rpc calls, otherwise info
 
