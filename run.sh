@@ -96,7 +96,7 @@ optimize() {
 
 version() {
   if docker ps | grep -q seed; then
-    echo "steemd -v" | docker exec -i witness bash
+    echo "steemd -v" | docker exec -i seed bash
     elif docker ps | grep -q witness; then
     echo "steemd -v" | docker exec -i witness bash
   else
