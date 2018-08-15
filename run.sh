@@ -203,7 +203,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir
   fi
 }
 
@@ -213,11 +213,11 @@ replay() {
   if [[ $REPLAY_FAST == "fullfast" ]]; then
     LASTWEEKUTCDATE=$(date -d "-7 days" +%s)
     echo "Replaying full node in fast mode (skipping feeds older than 7 days)"
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --follow-start-feeds=$LASTWEEKUTCDATE
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --follow-start-feeds=$LASTWEEKUTCDATE
     echo "Started."
   else
     echo "Running steem with replay..."
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
     echo "Started."
   fi
 }
