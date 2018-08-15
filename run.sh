@@ -87,6 +87,11 @@ optimize() {
   #echo 30000 | sudo tee /proc/sys/vm/dirty_writeback_centisecs
   echo $GREEN'Clearing caches. Current setting:' $(cat /proc/sys/vm/drop_caches)$RESET
   echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+  #swappiness
+  sudo sysctl vm.swappiness=1
+  #set swappiness on boot
+  sudo cp -rpn /etc/sysctl.conf /etc/sysctl.bak
+  echo 'vm.swappiness=1' | sudo tee -a /etc/sysctl.conf > /dev/null #append
 }
 
 version() {
