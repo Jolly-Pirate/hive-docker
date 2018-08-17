@@ -202,13 +202,17 @@ seed_running() {
 # The default data directory is now '/root/.steemd' instead of '/steem/witness_node_data_dir'.
 # Please move your data directory to '/root/.steemd' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
 
+LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
+RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE --tags-start-promoted=$LAST_WEEK_UTC_DATE"
+echo $RPC_OPTIMIZATIONS
+
 start() {
   echo $GREEN"Starting container..."$RESET
   seed_exists
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update=true $RPC_OPTIMIZATIONS
   fi
 }
 
@@ -216,13 +220,12 @@ replay() {
   echo "Removing old container"
   docker rm $DOCKER_NAME
   if [[ $REPLAY_FAST == "fullfast" ]]; then
-    LASTWEEKUTCDATE=$(date -d "-7 days" +%s)
-    echo "Replaying full node in fast mode (skipping feeds older than 7 days)"
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --follow-start-feeds=$LASTWEEKUTCDATE
+    echo "Replaying optimized full node (skipping feeds older than 7 days)"
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --tags-skip-startup-update=false $RPC_OPTIMIZATIONS
     echo "Started."
   else
-    echo "Running steem with replay..."
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
+    echo "Replaying node..."
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --tags-skip-startup-update=false
     echo "Started."
   fi
 }
