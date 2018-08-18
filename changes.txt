@@ -9,4 +9,4 @@
 - Pass the branch version as argument when building the docker image, e.g. ./run.sh build master
 - Cleanup remnant docker images when building.
 - Reformatted the code with bash beautifier.
-- Added an option to replay full node in fast mode, skipping feeds older than 7 days.
+- Added an option to replay an RPC full node faster, skipping feeds and promoted posts older than 7 days.

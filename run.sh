@@ -212,7 +212,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update=true $RPC_OPTIMIZATIONS
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update $RPC_OPTIMIZATIONS
   fi
 }
 
@@ -221,11 +221,11 @@ replay() {
   docker rm $DOCKER_NAME
   if [[ $REPLAY_FAST == "fullfast" ]]; then
     echo "Replaying optimized full node (skipping feeds older than 7 days)"
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --tags-skip-startup-update=false $RPC_OPTIMIZATIONS
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_OPTIMIZATIONS
     echo "Started."
   else
     echo "Replaying node..."
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --tags-skip-startup-update=false
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
     echo "Started."
   fi
 }
