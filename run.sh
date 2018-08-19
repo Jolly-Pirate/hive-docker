@@ -203,8 +203,8 @@ seed_running() {
 # Please move your data directory to '/root/.steemd' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
 
 LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
-RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE --tags-start-promoted=$LAST_WEEK_UTC_DATE"
-#NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
+RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
+#NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node: --tags-start-promoted=$LAST_WEEK_UTC_DATE
 echo $RPC_OPTIMIZATIONS
 
 start() {
