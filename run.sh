@@ -202,18 +202,13 @@ seed_running() {
 # The default data directory is now '/root/.steemd' instead of '/steem/witness_node_data_dir'.
 # Please move your data directory to '/root/.steemd' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
 
-LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
-RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
-#NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node: --tags-start-promoted=$LAST_WEEK_UTC_DATE
-echo $RPC_OPTIMIZATIONS
-
 start() {
   echo $GREEN"Starting container..."$RESET
   seed_exists
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update $RPC_OPTIMIZATIONS
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
   fi
 }
 
@@ -222,6 +217,10 @@ replay() {
   docker rm $DOCKER_NAME
   if [[ $REPLAY_FAST == "fullfast" ]]; then
     echo "Replaying optimized full node (skipping feeds older than 7 days)"
+    LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
+    RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE --tags-start-promoted=$LAST_WEEK_UTC_DATE"
+    #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
+    echo $RPC_OPTIMIZATIONS
     docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_OPTIMIZATIONS
     echo "Started."
   else
