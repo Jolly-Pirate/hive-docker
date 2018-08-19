@@ -204,6 +204,7 @@ seed_running() {
 
 LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
 RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE --tags-start-promoted=$LAST_WEEK_UTC_DATE"
+#NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
 echo $RPC_OPTIMIZATIONS
 
 start() {
