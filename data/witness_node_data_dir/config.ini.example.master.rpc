@@ -1,12 +1,14 @@
-# Console appender definition json: {"appender", "stream"}
-log-console-appender = {"appender":"stderr","stream":"std_error"}
+# new and fixed logging format, logging configuration appears on 1 line.
 
-# File appender definition json:  {"appender", "file"}
-log-file-appender = {"appender":"p2p","file":"logs/p2p/p2p.log"}
+# Appender definition json: {"appender", "stream", "file"} Can only specify a file OR a stream
+log-appender = {"appender":"stderr","stream":"std_error"} {"appender":"p2p","file":"logs/p2p/p2p.log"}
 
 # Logger definition json: {"name", "level", "appender"}
-log-logger = {"name":"default","level":"info","appender":"stderr"}
-#log-logger = {"name":"p2p","level":"info","appender":"stderr"}
+log-logger = {"name":"default","level":"info","appender":"stderr"} {"name":"p2p","level":"warn","appender":"p2p"}
+
+# obsolete?
+# log-console-appender = 
+# log-file-appender = 
 
 # Plugin(s) to enable, may be specified multiple times
 plugin = webserver p2p json_rpc witness account_by_key tags follow market_history

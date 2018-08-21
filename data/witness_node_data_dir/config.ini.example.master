@@ -1,12 +1,14 @@
-# Console appender definition json: {"appender", "stream"}
-log-console-appender = {"appender":"stderr","stream":"std_error"}
+# new and fixed logging format, logging configuration appears on 1 line.
 
-# File appender definition json:  {"appender", "file"}
-log-file-appender = {"appender":"p2p","file":"logs/p2p/p2p.log"}
+# Appender definition json: {"appender", "stream", "file"} Can only specify a file OR a stream
+log-appender = {"appender":"stderr","stream":"std_error"} {"appender":"p2p","file":"logs/p2p/p2p.log"}
 
 # Logger definition json: {"name", "level", "appender"}
-log-logger = {"name":"default","level":"info","appender":"stderr"}
-#log-logger = {"name":"p2p","level":"info","appender":"stderr"}
+log-logger = {"name":"default","level":"info","appender":"stderr"} {"name":"p2p","level":"warn","appender":"p2p"}
+
+# obsolete?
+# log-console-appender = 
+# log-file-appender = 
 
 # Whether to print backtrace on SIGSEGV
 backtrace = yes
@@ -176,11 +178,5 @@ plugin = witness
 shared-file-full-threshold = 9500
 shared-file-scale-rate = 1000
 
-# comment for a  witness node
+# comment this for a  witness node
 p2p-endpoint = 0.0.0.0:2001
-
-# log-logger = {"name":"default","level":"debug","appender":"stderr"}
-# debug mode to show the rpc calls, otherwise info
-
-# commented this at the top, to disable file logging, since logging is handled by docker
-# log-logger = {"name":"p2p","level":"warn","appender":"p2p"}
