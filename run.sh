@@ -87,11 +87,19 @@ optimize() {
   #echo 30000 | sudo tee /proc/sys/vm/dirty_writeback_centisecs
   echo $GREEN'Clearing caches. Current setting:' $(cat /proc/sys/vm/drop_caches)$RESET
   echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+
+  echo $GREEN'Configuring swappiness. Current setting:' $(cat /proc/sys/vm/swappiness)$RESET
   #swappiness
   sudo sysctl vm.swappiness=1
   #set swappiness on boot
-  sudo cp -rpn /etc/sysctl.conf /etc/sysctl.bak
-  echo 'vm.swappiness=1' | sudo tee -a /etc/sysctl.conf > /dev/null #append
+  if ! grep -q -e '^vm.swappiness' /etc/sysctl.conf; then
+    sudo cp -rpn /etc/sysctl.conf /etc/sysctl.bak
+    echo 'vm.swappiness = 1' | sudo tee -a /etc/sysctl.conf > /dev/null # -a append
+    grep -e '^vm.swappiness' /etc/sysctl.conf
+  else
+    sudo sed -i /etc/sysctl.conf -r -e 's/^vm.swappiness.*=.*/vm.swappiness = 1/g'
+    grep -e '^vm.swappiness' /etc/sysctl.conf
+  fi
 }
 
 version() {
