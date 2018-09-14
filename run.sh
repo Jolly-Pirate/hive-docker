@@ -32,11 +32,11 @@ fi
 
 if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
   echo "config.ini not found. copying example (seed)";
-  cp data/witness_node_data_dir/config.ini.example.stable data/witness_node_data_dir/config.ini
+  cp data/witness_node_data_dir/config.ini.example.master data/witness_node_data_dir/config.ini
 fi
 
 if [[ $1 == *"build"* && $2 == "" ]]; then
-  echo $RED"Specify the steemd version to build, e.g. stable"$RESET
+  echo $RED"Specify the steemd version to build, e.g. master"$RESET
   exit
 fi
 
