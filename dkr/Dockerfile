@@ -29,6 +29,8 @@ RUN cd ~ && \
 	cd steem && \
 	git checkout ${steemd_version} && \
 	git submodule update --init --recursive && \
+	# fix Websocket Timer Expired, just in case. https://github.com/steemit/steem/issues/35
+	sed -i libraries/fc/vendor/websocketpp/websocketpp/transport/asio/endpoint.hpp -e 's/m_listen_backlog(0)/m_listen_backlog(lib::asio::socket_base::max_connections)/g' && \
 	mkdir build && cd build && \
 	cmake -DCMAKE_BUILD_TYPE=Release .. -DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON && \
 	make -j$(nproc) && \
