@@ -34,6 +34,7 @@ RUN cd ~ && \
 	# 2018-09-17 patch
 	#sed -i libraries/chain/database.cpp -e 's/_fork_db.set_max_size( dpo.head_block_number - dpo.last_irreversible_block_num + 1 )/_fork_db.set_max_size( dpo.head_block_number - dpo.last_irreversible_block_num + 2048 )/g' && \	
 	curl https://github.com/abitmore/steem/commit/91d9ca782ef0de87015f2d3d14bea4571aa98811.patch | git apply && \
+	curl https://github.com/abitmore/steem/commit/250e9b96be7080c35220e948e84a9b4b2d255b71.patch | git apply && \
 	curl https://github.com/abitmore/steem/commit/2e7dca8e9639df6a62429f58a24803978bbc5b7b.patch | git apply && \
 	curl https://github.com/abitmore/steem/commit/9ef9052e00ddf61dbff6d2a3f1e1a839d3db190e.patch | git apply && \
 	mkdir build && cd build && \
