@@ -31,8 +31,8 @@ if [[ -f .env ]]; then
 fi
 
 if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
-  echo "config.ini not found. copying example (seed)";
-  cp data/witness_node_data_dir/config.ini.example.master data/witness_node_data_dir/config.ini
+  echo "config.ini not found. copying appbase example (seed)";
+  cp data/witness_node_data_dir/config.ini.example.appbase data/witness_node_data_dir/config.ini
 fi
 
 if [[ $1 == *"build"* && $2 == "" ]]; then

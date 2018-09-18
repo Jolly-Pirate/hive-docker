@@ -1,4 +1,5 @@
 # Endpoint for P2P node to listen on
+# Comment it if running a witness node
 p2p-endpoint = 0.0.0.0:2001
 
 # Maxmimum number of incoming connections on P2P endpoint
