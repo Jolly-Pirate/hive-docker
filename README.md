@@ -2,9 +2,9 @@
 
 See post here for instructions: https://steemit.com/steem/@someguy123/your-guide-to-setting-up-a-witness-server-steem-in-a-box-hf19
 
-The `stable` branch is v0.19.6
+The branch `v0.19.6` is non-AppBase
 
-The `master` branch is v0.19.11 (AppBase)
+The branch `v0.19.12` is AppBase
 
 
 # LICENSE
