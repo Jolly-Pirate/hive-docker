@@ -8,6 +8,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
 FULL_DOCKER_DIR="$DIR/dkr_fullnode"
+PKG_DIR="$DIR/dkr_pkg"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
 STEEMD_VERSION="$2"
@@ -132,8 +133,10 @@ install_ntp() {
 
 build() {
   echo $GREEN"Building docker container for steemd version: $STEEMD_VERSION"$RESET
+  cd $PKG_DIR
+  docker build -t steem-pkg .
   cd $DOCKER_DIR
-  docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  docker build --build-arg steemd_version=$STEEMD_VERSION -t steem .
   # clean image remnants
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
@@ -141,8 +144,10 @@ build() {
 
 build_full() {
   echo $GREEN"Building full-node docker container for steemd version: $STEEMD_VERSION"$RESET
+  cd $PKG_DIR
+  docker build -t steem-pkg .
   cd $FULL_DOCKER_DIR
-  docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  docker build --build-arg steemd_version=$STEEMD_VERSION -t steem .
   # clean image remnants
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
@@ -216,7 +221,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
   fi
 }
 
@@ -229,11 +234,11 @@ replay() {
     RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE --tags-start-promoted=$LAST_WEEK_UTC_DATE"
     #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
     echo $RPC_OPTIMIZATIONS
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_OPTIMIZATIONS
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_OPTIMIZATIONS
     echo "Started."
   else
     echo "Replaying node..."
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=100m --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
     echo "Started."
   fi
 }
