@@ -169,7 +169,7 @@ dlblocks() {
 }
 
 install_docker() {
-  #get latest version
+	#get latest version
   curl https://get.docker.com | sh
   if [ "$EUID" -ne 0 ]; then
     echo "Adding user $(whoami) to docker group"
@@ -195,17 +195,17 @@ install_full() {
 }
 
 container_exists() {
-  containercount=$(docker ps -a -f name="^/"$DOCKER_NAME"$" | wc -l)
-  if [[ $containercount -eq 2 ]]; then
+  seedcount=$(docker ps -a -f name="^/"$DOCKER_NAME"$" | wc -l)
+  if [[ $seedcount -eq 2 ]]; then
     return 0
   else
     return -1
   fi
 }
 
-container_running() {
-  containercount=$(docker ps -f 'status=running' -f name=$DOCKER_NAME | wc -l)
-  if [[ $containercount -eq 2 ]]; then
+seed_running() {
+  seedcount=$(docker ps -f 'status=running' -f name=$DOCKER_NAME | wc -l)
+  if [[ $seedcount -eq 2 ]]; then
     return 0
   else
     return -1
@@ -288,7 +288,7 @@ status() {
     return
   fi
   
-  container_running
+  seed_running
   if [[ $? == 0 ]]; then
     echo "Container running?: "$GREEN"YES"$RESET
   else

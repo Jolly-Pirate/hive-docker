@@ -164,7 +164,7 @@ required-participation = 33
 shared-file-size = 62G
 shared-file-dir = /shm/
 
-plugin = witness
+plugin = witness rc_api
 
 # for the cli_wallet
 # 127.0.0.1:8090 accessible only from localhost, while 0.0.0.0:8090 accessible from external (allowed in ufw ofc)
