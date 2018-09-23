@@ -171,7 +171,14 @@ webserver-ws-endpoint = 127.0.0.1:8090
 webserver-http-endpoint = 127.0.0.1:8090
 plugin = network_broadcast_api condenser_api
 
+# A 2-precision percentage (0-10000) that defines the threshold for when to 
+# autoscale the shared memory file. Setting this to 0 disables autoscaling. 
+# The recommended value for consensus node is 9500 (95%). Full node is 9900 (99%).
 shared-file-full-threshold = 9500
+
+# A 2-precision percentage (0-10000) that defines how quickly to scale the shared memory file. 
+# When autoscaling occurs, the file's size will be increased by this percentage. 
+# Setting this to 0 disables autoscaling. The recommended value is between 1000 and 2000 (10-20%).
 shared-file-scale-rate = 1000
 
 # Endpoint for P2P node to listen on

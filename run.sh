@@ -7,7 +7,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
-FULL_DOCKER_DIR="$DIR/dkr_fullnode"
+RPC_DOCKER_DIR="$DIR/dkr_rpcnode"
 PKG_DIR="$DIR/dkr_pkg"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
@@ -58,18 +58,19 @@ help() {
   echo
   echo "Commands: "
   echo "    build - build steem container from docker file (pass the steemd version as argument)"
+  echo "    build_rpc - build steem RPC container from docker file (pass the steemd version as argument)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
   echo "    install_docker - install docker"
-  echo "    install_full - pulls latest (FULL NODE FOR RPC) docker image from server (no compiling)"
+  echo "    install_rpc - pulls latest (RPC NODE FOR RPC) docker image from server (no compiling)"
   echo "    install_ntp - install and configure NTP synchronization"
   echo "    logs - show all logs inc. docker logs, and steem logs"
   echo "    preinstall - install linux utils packages"
   echo "    rebuild - build steem container (from docker file), and then restarts it"
   echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
   echo "    replay - start steem container (in replay mode)"
-  echo "    replay rpc - replay steem full RPC node in fast mode (skip feeds and tags older than 7 days)"
+  echo "    replay rpc - replay steem RPC node in fast mode (skip feeds and tags older than 7 days)"
   echo "    restart - restart steem container"
   echo "    shm_size - resize /dev/shm to a given size, e.g. ./run.sh shm_size 10G"
   echo "    start - start steem container"
@@ -142,11 +143,11 @@ build() {
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
 
-build_full() {
-  echo $GREEN"Building full-node docker container for steemd version: $STEEMD_VERSION"$RESET
+build_rpc() {
+  echo $GREEN"Building RPC node docker container for steemd version: $STEEMD_VERSION"$RESET
   cd $PKG_DIR
   docker build -t steem-pkg .
-  cd $FULL_DOCKER_DIR
+  cd $RPC_DOCKER_DIR
   docker build --build-arg steemd_version=$STEEMD_VERSION -t steem .
   # clean image remnants
   echo $GREEN"Removing remnant docker images"$RESET
@@ -186,7 +187,7 @@ install() {
   echo "Installation completed. You may now configure or run the server"
 }
 
-install_full() {
+install_rpc() {
   echo "Loading image from someguy123/steem"
   docker pull someguy123/steem:latest-full
   echo "Tagging as steem"
@@ -230,16 +231,17 @@ replay() {
   echo "Removing old container"
   docker rm $DOCKER_NAME
   if [[ $REPLAY_RPC == "rpc" ]]; then
-    echo "Replaying optimized full node (skipping feeds older than 7 days)"
+    echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
     LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
     #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
+    RPC_FEEDS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
     if grep -q data/witness_node_data_dir/config.ini -e '^plugin.*tags.*' ; then
-      RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE --tags-start-promoted=$LAST_WEEK_UTC_DATE"
+      RPC_TAGS="--tags-start-promoted=$LAST_WEEK_UTC_DATE"
     else
-      RPC_OPTIMIZATIONS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
+      RPC_TAGS=""
     fi
-    echo $RPC_OPTIMIZATIONS
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_OPTIMIZATIONS
+    echo $RPC_FEEDS $RPC_TAGS
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
     echo "Started."
   else
     echo "Replaying node..."
@@ -307,9 +309,9 @@ case $1 in
     echo "You may want to use '$0 install' for a binary image instead, it's faster."
     build
   ;;
-  build_full)
-    echo "You may want to use '$0 install_full' for a binary image instead, it's faster."
-    build_full
+  build_rpc)
+    echo "You may want to use '$0 install_rpc' for a binary image instead, it's faster."
+    build_rpc
   ;;
   install_docker)
     install_docker
@@ -317,8 +319,8 @@ case $1 in
   install)
     install
   ;;
-  install_full)
-    install_full
+  install_rpc)
+    install_rpc
   ;;
   start)
     start
