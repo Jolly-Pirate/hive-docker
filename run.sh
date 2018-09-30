@@ -137,7 +137,7 @@ build() {
   cd $PKG_DIR
   docker build -t steem-pkg .
   cd $DOCKER_DIR
-  docker build --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
   # clean image remnants
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
@@ -148,7 +148,7 @@ build_rpc() {
   cd $PKG_DIR
   docker build -t steem-pkg .
   cd $RPC_DOCKER_DIR
-  docker build --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
   # clean image remnants
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
@@ -275,7 +275,7 @@ remote_wallet() {
 
 logs() {
   echo $BLUE"DOCKER LOGS: "$RESET
-  docker logs --tail=30 $DOCKER_NAME
+  docker logs --tail=50 --follow $DOCKER_NAME
   #echo $RED"INFO AND DEBUG LOGS: "$RESET
   #tail -n 30 $DATADIR/{info.log,debug.log}
 }
