@@ -7,12 +7,11 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
-RPC_DOCKER_DIR="$DIR/dkr_rpcnode"
+DOCKER_DIR_RPC="$DIR/dkr_rpcnode"
 PKG_DIR="$DIR/dkr_pkg"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
 STEEMD_VERSION="$2"
-REPLAY_RPC="$2"
 
 BOLD="$(tput bold)"
 RED="$(tput setaf 1)"
@@ -29,6 +28,19 @@ PORTS="2001"
 
 if [[ -f .env ]]; then
   source .env
+else
+  echo $RED"Missing .env file, please creat one before proceeding."$RESET
+  exit
+fi
+
+if [[ $CONTAINER_TYPE != +(witness|seed|rpc) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file"$RESET
+  exit
+fi
+
+if [[ ! $DOCKER_NAME ]]; then
+  echo $RED"DOCKER_NAME not defined in the .env file"$RESET
+  exit
 fi
 
 if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
@@ -57,8 +69,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build steem container from docker file (pass the steemd version as argument)"
-  echo "    build_rpc - build steem RPC container from docker file (pass the steemd version as argument)"
+  echo "    build - build steem container (witness, seed or rpc) from docker file (pass the steemd version as argument)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
@@ -67,16 +78,14 @@ help() {
   echo "    install_ntp - install and configure NTP synchronization"
   echo "    logs - show all logs inc. docker logs, and steem logs"
   echo "    preinstall - install linux utils packages"
-  echo "    rebuild - build steem container (from docker file), and then restarts it"
   echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
-  echo "    replay - start steem container (in replay mode)"
-  echo "    replay rpc - replay steem RPC node in fast mode (skip feeds and tags older than 7 days)"
+  echo "    replay - start steem container in replay mode"
   echo "    restart - restart steem container"
   echo "    shm_size - resize /dev/shm to a given size, e.g. ./run.sh shm_size 10G"
   echo "    start - start steem container"
   echo "    status - show status of steem container"
   echo "    stop - stop steem container"
-  echo "    version - get steemd version from the running container (e.g. seed or witness)"
+  echo "    version - get steemd version from the running container"
   echo "    wallet - open cli_wallet in the container"
   echo
   exit
@@ -133,23 +142,20 @@ install_ntp() {
 }
 
 build() {
-  echo $GREEN"Building docker container for steemd version: $STEEMD_VERSION"$RESET
+  echo $GREEN"Building steem_pkg container"$RESET
   cd $PKG_DIR
   docker build -t steem-pkg .
-  cd $DOCKER_DIR
-  docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
-  # clean image remnants
-  echo $GREEN"Removing remnant docker images"$RESET
-  docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
-}
-
-build_rpc() {
-  echo $GREEN"Building RPC node docker container for steemd version: $STEEMD_VERSION"$RESET
-  cd $PKG_DIR
-  docker build -t steem-pkg .
-  cd $RPC_DOCKER_DIR
-  docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
-  # clean image remnants
+  echo $GREEN"Building docker container for steem $CONTAINER_TYPE $STEEMD_VERSION"$RESET
+  
+  if [[ $CONTAINER_TYPE == "witness" || $CONTAINER_TYPE == "seed" ]]; then
+    cd $DOCKER_DIR
+    docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  fi
+  if [[ $CONTAINER_TYPE == "rpc" ]]; then
+    cd $DOCKER_DIR_RPC
+    docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  fi
+  
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
@@ -225,12 +231,19 @@ start() {
   else
     docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
   fi
+  
+  sleep 1
+  if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+    echo $GREEN"Container $DOCKER_NAME successfully started"$RESET
+  else
+    echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+  fi
 }
 
 replay() {
-  echo "Removing old container"
-  docker rm $DOCKER_NAME
-  if [[ $REPLAY_RPC == "rpc" ]]; then
+  stop
+  
+  if [[ $CONTAINER_TYPE == "rpc" ]]; then
     echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
     LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
     #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
@@ -242,11 +255,16 @@ replay() {
     fi
     echo $RPC_FEEDS $RPC_TAGS
     docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    echo "Started."
   else
-    echo "Replaying node..."
+    echo "Replaying $CONTAINER_TYPE node..."
     docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
-    echo "Started."
+  fi
+  
+  sleep 1
+  if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+    echo $GREEN"Container $DOCKER_NAME successfully started"$RESET
+  else
+    echo $RED"Container $DOCKER_NAME didn't start!"$RESET
   fi
 }
 
@@ -256,7 +274,7 @@ shm_size() {
 }
 
 stop() {
-  echo $RED"Stopping container..."$RESET
+  echo $RED"Stopping and removing container $DOCKER_NAME..."$RESET
   docker stop $DOCKER_NAME
   docker rm $DOCKER_NAME
 }
@@ -309,10 +327,6 @@ case $1 in
     echo "You may want to use '$0 install' for a binary image instead, it's faster."
     build
   ;;
-  build_rpc)
-    echo "You may want to use '$0 install_rpc' for a binary image instead, it's faster."
-    build_rpc
-  ;;
   install_docker)
     install_docker
   ;;
@@ -337,12 +351,6 @@ case $1 in
   restart)
     stop
     sleep 5
-    start
-  ;;
-  rebuild)
-    stop
-    sleep 5
-    build
     start
   ;;
   optimize)
