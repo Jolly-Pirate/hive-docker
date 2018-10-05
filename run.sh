@@ -7,11 +7,12 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
-DOCKER_DIR_RPC="$DIR/dkr_rpcnode"
 PKG_DIR="$DIR/dkr_pkg"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
-STEEMD_VERSION="$2"
+STEEM_VERSION="$2"
+BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON"
+BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF"
 
 BOLD="$(tput bold)"
 RED="$(tput setaf 1)"
@@ -33,8 +34,8 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(witness|seed|rpc) ]]; then
-  echo $RED"CONTAINER_TYPE not defined in the .env file"$RESET
+if [[ $CONTAINER_TYPE != +(seed|witness|rpc) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness or rpc."$RESET
   exit
 fi
 
@@ -44,12 +45,12 @@ if [[ ! $DOCKER_NAME ]]; then
 fi
 
 if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
-  echo "config.ini not found. copying appbase example (seed)";
-  cp data/witness_node_data_dir/config.ini.example.appbase data/witness_node_data_dir/config.ini
+  echo "Configuration file not found. Copying example config.ini from template (seed)";
+  cp data/witness_node_data_dir/config-example.ini data/witness_node_data_dir/config.ini
 fi
 
 if [[ $1 == *"build"* && $2 == "" ]]; then
-  echo $RED"Specify the steemd version to build, e.g. master"$RESET
+  echo $RED"Specify the steemd version to build, for example: ./run.sh build master"$RESET
   exit
 fi
 
@@ -69,12 +70,11 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build steem container (witness, seed or rpc) from docker file (pass the steemd version as argument)"
+  echo "    build - build steem container (witness, seed or rpc) from docker file (pass steem version as argument)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
   echo "    install_docker - install docker"
-  echo "    install_rpc - pulls latest (RPC NODE FOR RPC) docker image from server (no compiling)"
   echo "    install_ntp - install and configure NTP synchronization"
   echo "    logs - show all logs inc. docker logs, and steem logs"
   echo "    preinstall - install linux utils packages"
@@ -145,17 +145,16 @@ build() {
   echo $GREEN"Building steem_pkg container"$RESET
   cd $PKG_DIR
   docker build -t steem-pkg .
-  echo $GREEN"Building docker container for steem $CONTAINER_TYPE $STEEMD_VERSION"$RESET
-  
-  if [[ $CONTAINER_TYPE == "witness" || $CONTAINER_TYPE == "seed" ]]; then
-    cd $DOCKER_DIR
-    docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
+  echo $GREEN"Building docker container for steem $CONTAINER_TYPE $STEEM_VERSION"$RESET
+
+  cd $DOCKER_DIR
+  if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
+    docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM -t steem .
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
-    cd $DOCKER_DIR_RPC
-    docker build --no-cache --build-arg steemd_version=$STEEMD_VERSION -t steem .
+    docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC -t steem .
   fi
-  
+
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
