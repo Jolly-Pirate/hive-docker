@@ -4,10 +4,6 @@
 **/block_log*
 **/config.ini
 **/core
-**/debug.log
-**/info.log
 **/logs
-**/node
 **/p2p
 .env
-lock
