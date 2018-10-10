@@ -44,10 +44,16 @@ if [[ ! $DOCKER_NAME ]]; then
   exit
 fi
 
-if [[ ! -f data/witness_node_data_dir/config.ini ]]; then
-  echo "Configuration file not found. Copying example config.ini from template (seed)";
-  cp data/witness_node_data_dir/config-example.ini data/witness_node_data_dir/config.ini
+if [[ ! -f $DATADIR/witness_node_data_dir/config.ini ]]; then
+  echo $RED"Configuration file not found. Copying example config.ini from template (seed)"$RESET
+  cp $DATADIR/witness_node_data_dir/config-example.ini $DATADIR/witness_node_data_dir/config.ini
 fi
+
+if [[ $CONTAINER_TYPE == "witness" ]] && grep -q -e '^p2p-endpoint.*=.*' $DATADIR/witness_node_data_dir/config.ini; then
+  echo $RED"Detected witness node, disabling p2p-endpoint in config.ini."$RESET
+  sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^p2p-endpoint/# p2p-endpoint/g'
+fi
+
 
 if [[ $1 == *"build"* && $2 == "" ]]; then
   echo $RED"Specify the steemd version to build, for example: ./run.sh build master"$RESET
