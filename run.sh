@@ -7,7 +7,6 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
-PKG_DIR="$DIR/dkr_pkg"
 DATADIR="$DIR/data"
 DOCKER_NAME="seed"
 STEEM_VERSION="$2"
@@ -150,11 +149,6 @@ install_ntp() {
 }
 
 build() {
-  echo $GREEN"Building steem_pkg container"$RESET
-  cd $PKG_DIR
-  docker build -t steem-pkg .
-  echo $GREEN"Building docker container for steem $CONTAINER_TYPE $STEEM_VERSION"$RESET
-  
   cd $DOCKER_DIR
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
     docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM -t steem .

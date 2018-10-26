@@ -1,6 +1,7 @@
 FROM ubuntu:xenial
 
-RUN echo "\033[1mInstalling packages\033[0m" && \
+RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
+	sleep 5 && \
 	apt-get update  && \
 	# Required packages
 	apt-get install -y autoconf automake cmake g++ git libbz2-dev libsnappy-dev libssl-dev libtool make pkg-config python3 python3-jinja2  && \
@@ -21,7 +22,8 @@ EXPOSE 8090
 ARG STEEM_VERSION
 ARG BUILD_SWITCHES
 
-RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES}\033[0m" && \
+RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \
+	sleep 5 && \
 	cd ~ && \
 	git clone https://github.com/steemit/steem.git && \
 	cd steem && \
