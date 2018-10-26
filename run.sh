@@ -127,7 +127,7 @@ version() {
     elif docker ps | grep -q rpc; then
     echo "steemd -v" | docker exec -i rpc bash
   else
-    echo "No seed/witness container running"
+    echo "Container not running"
   fi
 }
 
