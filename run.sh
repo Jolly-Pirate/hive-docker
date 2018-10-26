@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # Steem node manager
-# Released under GNU AGPL by Someguy123
-# Modified by Jolly-Pirate
+# Released under GNU AGPL by Jolly-Pirate
+# Modified from Someguy123
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
