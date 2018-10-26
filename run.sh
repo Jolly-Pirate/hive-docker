@@ -124,6 +124,8 @@ version() {
     echo "steemd -v" | docker exec -i seed bash
     elif docker ps | grep -q witness; then
     echo "steemd -v" | docker exec -i witness bash
+    elif docker ps | grep -q rpc; then
+    echo "steemd -v" | docker exec -i rpc bash
   else
     echo "No seed/witness container running"
   fi
@@ -152,7 +154,7 @@ build() {
   cd $PKG_DIR
   docker build -t steem-pkg .
   echo $GREEN"Building docker container for steem $CONTAINER_TYPE $STEEM_VERSION"$RESET
-
+  
   cd $DOCKER_DIR
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
     docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM -t steem .
@@ -160,7 +162,7 @@ build() {
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
     docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC -t steem .
   fi
-
+  
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
