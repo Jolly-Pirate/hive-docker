@@ -2,15 +2,15 @@ FROM ubuntu:xenial
 
 RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 	sleep 5 && \
-	apt-get update  && \
+	apt-get update && \
 	# Required packages
-	apt-get install -y autoconf automake cmake g++ git libbz2-dev libsnappy-dev libssl-dev libtool make pkg-config python3 python3-jinja2  && \
+	apt-get install -y autoconf automake cmake g++ git libbz2-dev libsnappy-dev libssl-dev libtool make pkg-config python3 python3-jinja2 && \
 	# Boost packages (also required)
-	apt-get install -y libboost-chrono-dev libboost-context-dev libboost-coroutine-dev libboost-date-time-dev libboost-filesystem-dev libboost-iostreams-dev libboost-locale-dev libboost-program-options-dev libboost-serialization-dev libboost-signals-dev libboost-system-dev libboost-test-dev libboost-thread-dev  && \
+	apt-get install -y libboost-chrono-dev libboost-context-dev libboost-coroutine-dev libboost-date-time-dev libboost-filesystem-dev libboost-iostreams-dev libboost-locale-dev libboost-program-options-dev libboost-serialization-dev libboost-signals-dev libboost-system-dev libboost-test-dev libboost-thread-dev && \
 	# Optional packages (not required, but will make a nicer experience)
-	apt-get install -y doxygen libncurses5-dev libreadline-dev perl  && \
+	apt-get install -y doxygen libncurses5-dev libreadline-dev perl && \
 	# Other useful packages
-	apt-get install -y curl nano wget  && \
+	apt-get install -y curl nano net-tools wget && \
 	apt-get clean -qy
 
 # P2P (seed) port
@@ -35,7 +35,7 @@ RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES
 	cmake -DCMAKE_BUILD_TYPE=Release .. ${BUILD_SWITCHES} && \
 	make -j$(nproc) && \
 	# install defaults to /usr/bin
-	make install && cd .. && rm -rf build  && \
+	make install && cd .. && rm -rf build && \
 	echo "\033[1mPlease configure me! You need to mount a data directory onto /steem of this container to it to function correctly. (if you're using Steem-in-a-box most of this is handled automatically)\033[0m"
 
 VOLUME /steem
