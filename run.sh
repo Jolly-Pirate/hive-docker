@@ -130,6 +130,18 @@ version() {
   fi
 }
 
+netstat() {
+  if docker ps | grep -q seed; then
+    echo "netstat -pevan | grep steemd" | docker exec -i seed bash
+    elif docker ps | grep -q witness; then
+    echo "netstat -pevan | grep steemd" | docker exec -i witness bash
+    elif docker ps | grep -q rpc; then
+    echo "netstat -pevan | grep steemd" | docker exec -i rpc bash
+  else
+    echo "Container not running"
+  fi
+}
+
 preinstall() {
   sudo apt update
   sudo apt install -y curl git wget xz-utils
@@ -378,6 +390,9 @@ case $1 in
   ;;
   version)
     version
+  ;;
+  netstat)
+    netstat
   ;;
   preinstall)
     preinstall
