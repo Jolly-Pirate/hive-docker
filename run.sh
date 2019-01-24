@@ -12,6 +12,7 @@ DOCKER_NAME="seed"
 STEEM_VERSION="$2"
 BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON"
 BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF"
+BUILD_TAG="steem:$STEEM_VERSION"
 
 BOLD="$(tput bold)"
 RED="$(tput setaf 1)"
@@ -161,14 +162,16 @@ install_ntp() {
 }
 
 build() {
+  echo $GREEN"Building image $BUILD_TAG"$RESET
   cd $DOCKER_DIR
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
-    docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM -t steem .
+    docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
-    docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC -t steem .
+    docker build --no-cache --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG .
   fi
-  
+  echo $GREEN"Re-tagging the build as steem:latest"$RESET
+  docker tag $BUILD_TAG steem:latest
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
