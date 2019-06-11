@@ -11,7 +11,7 @@ DATADIR="$DIR/data"
 DOCKER_NAME="seed"
 STEEM_VERSION="$2"
 BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON"
-BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF"
+BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON"
 BUILD_TAG="steem:$STEEM_VERSION"
 
 BOLD="$(tput bold)"
@@ -30,7 +30,7 @@ PORTS="2001"
 if [[ -f .env ]]; then
   source .env
 else
-  echo $RED"Missing .env file, please creat one before proceeding."$RESET
+  echo $RED"Missing .env file, please create one before proceeding."$RESET
   exit
 fi
 
@@ -150,13 +150,13 @@ preinstall() {
 
 install_ntp() {
   sudo apt install -y ntp
-  echo "minpoll 5" | sudo tee -a /etc/ntp.conf > /dev/null
-  echo "maxpoll 7" | sudo tee -a /etc/ntp.conf > /dev/null
+  if ! grep -q "minpoll 5" /etc/ntp.conf; then echo "minpoll 5" | sudo tee -a /etc/ntp.conf > /dev/null; fi
+  if ! grep -q "maxpoll 7" /etc/ntp.conf; then echo "maxpoll 7" | sudo tee -a /etc/ntp.conf > /dev/null; fi
   sudo systemctl enable ntp
   sudo systemctl restart ntp
   echo
   echo $BOLD'NTP status'$RESET$GREEN
-  timedatectl | grep 'NTP synchronized'
+  timedatectl | grep 'synchronized'
   ntptime | grep '  offset' | awk '{print $1,$2,$3}' | tr -d ','
   echo $RESET
 }
@@ -245,7 +245,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
+    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
   fi
   
   sleep 1
@@ -270,8 +270,9 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-  else
+    #docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
+	docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS
+    else
     echo "Replaying $CONTAINER_TYPE node..."
     docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
   fi
