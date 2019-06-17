@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 
 RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 	sleep 5 && \
@@ -28,7 +28,7 @@ RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES
 	git clone https://github.com/steemit/steem.git && \
 	cd steem && \
 	git checkout ${STEEM_VERSION} && \
-    # anyx fix for Unlinkable block p2p
+    # anyx fix for Unlinkable block p2p, merged Jan 7, 2019
 	#curl https://github.com/steemit/steem/commit/e66af33329e35a91ddf42abd6529b4bbdd9f7ec8.patch | git apply && \
 	git submodule update --init --recursive && \
 	# fix Websocket Timer Expired, just in case. https://github.com/steemit/steem/issues/35
