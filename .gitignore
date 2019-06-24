@@ -4,6 +4,7 @@
 **/block_log*
 **/config.ini
 **/core
+**/database.cfg
 **/logs
 **/p2p
 .env
