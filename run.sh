@@ -8,7 +8,6 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
-DOCKER_NAME="seed"
 STEEM_VERSION="$2"
 BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON"
 BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON"
@@ -53,7 +52,6 @@ if [[ $CONTAINER_TYPE == "witness" ]] && grep -q -e '^p2p-endpoint.*=.*' $DATADI
   echo $RED"Detected witness node, disabling p2p-endpoint in config.ini."$RESET
   sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^p2p-endpoint/# p2p-endpoint/g'
 fi
-
 
 if [[ $1 == *"build"* && $2 == "" ]]; then
   echo $RED"Specify the steemd version to build, for example: ./run.sh build master"$RESET
