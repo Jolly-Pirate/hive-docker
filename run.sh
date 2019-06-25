@@ -22,13 +22,11 @@ function versionToInt() {
   echo $val
 }
 VER="$( echo ${STEEM_VERSION#"v"} )"
-
 # only numbers in version
 if [[ $VER =~ ^[0-9.]+$ ]]; then
   versionIsNum=1
   versionToInt $VER
 fi
-
 if [[ $val -lt 20011 && versionIsNum -eq 1 ]]; then
   BUILD_OS="ubuntu:xenial"
 else # handles master, stable too
