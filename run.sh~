@@ -29,10 +29,10 @@ if [[ $VER =~ ^[0-9.]+$ ]]; then
   versionToInt $VER
 fi
 
-if [[ $val -lt 20011 && versionIsNum -eq 1 ]]; then
-  BUILD_OS="ubuntu:xenial"
+if [[ $val -lt 20011 && versionIsNum -eq 1 ]]; then 
+BUILD_OS="ubuntu:xenial"
 else # handles master, stable too
-  BUILD_OS="ubuntu:bionic"
+BUILD_OS="ubuntu:bionic"
 fi
 
 BOLD="$(tput bold)"
@@ -291,8 +291,8 @@ replay() {
     fi
     echo $RPC_FEEDS $RPC_TAGS
     #docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS
-  else
+	docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS
+    else
     echo "Replaying $CONTAINER_TYPE node..."
     docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
   fi
