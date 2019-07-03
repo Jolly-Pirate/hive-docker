@@ -53,8 +53,8 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(seed|witness|rpc) ]]; then
-  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness or rpc."$RESET
+if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, rpc or rpcah."$RESET
   exit
 fi
 
@@ -94,7 +94,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build steem container (seed, witness or rpc) from docker file (pass steem version as argument)"
+  echo "    build - build steem container (seed, witness, rpc or rpcah) from docker file (pass steem version as argument)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
@@ -144,6 +144,8 @@ version() {
     echo "steemd -v" | docker exec -i witness bash
     elif docker ps | grep -q rpc; then
     echo "steemd -v" | docker exec -i rpc bash
+    elif docker ps | grep -q rpcah; then
+    echo "steemd -v" | docker exec -i rpcah bash
   else
     echo "Container not running"
   fi
@@ -156,6 +158,8 @@ netstat() {
     echo "netstat -pevan | grep steemd" | docker exec -i witness bash
     elif docker ps | grep -q rpc; then
     echo "netstat -pevan | grep steemd" | docker exec -i rpc bash
+    elif docker ps | grep -q rpcah; then
+    echo "netstat -pevan | grep steemd" | docker exec -i rpcah bash
   else
     echo "Container not running"
   fi
@@ -185,7 +189,7 @@ build() {
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
   fi
-  if [[ $CONTAINER_TYPE == "rpc" ]]; then
+  if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG .
   fi
   echo $GREEN"Re-tagging the build as steem:latest"$RESET
