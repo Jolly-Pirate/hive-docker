@@ -138,13 +138,13 @@ optimize() {
 }
 
 version() {
-  if docker ps | grep -q seed; then
+  if docker ps | grep -wq seed; then
     echo "steemd -v" | docker exec -i seed bash
-    elif docker ps | grep -q witness; then
+    elif docker ps | grep -wq witness; then
     echo "steemd -v" | docker exec -i witness bash
-    elif docker ps | grep -q rpc; then
+    elif docker ps | grep -wq rpc; then
     echo "steemd -v" | docker exec -i rpc bash
-    elif docker ps | grep -q rpcah; then
+    elif docker ps | grep -wq rpcah; then
     echo "steemd -v" | docker exec -i rpcah bash
   else
     echo "Container not running"
