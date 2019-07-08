@@ -281,7 +281,7 @@ start() {
 replay() {
   stop
   
-  if [[ $CONTAINER_TYPE == "rpc" ]]; then
+  if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
     echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
     LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
     #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
