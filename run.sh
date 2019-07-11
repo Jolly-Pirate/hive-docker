@@ -314,7 +314,7 @@ replay() {
 
 shm_size() {
   echo "Setting SHM to $1"
-  sudo mount -o remount,size=$1 $SHM_DIR
+  sudo mount -o remount,size=$1 /dev/shm
 }
 
 stop() {
