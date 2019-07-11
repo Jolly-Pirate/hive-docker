@@ -63,6 +63,11 @@ if [[ ! $DOCKER_NAME ]]; then
   exit
 fi
 
+if [[ ! $SHM_DIR ]]; then
+  echo $RED"SHM_DIR not defined in the .env file"$RESET
+  exit
+fi
+
 if [[ ! -f $DATADIR/witness_node_data_dir/config.ini ]]; then
   echo $RED"Configuration file not found. Copying example config.ini from template (seed)"$RESET
   cp $DATADIR/witness_node_data_dir/config-example.ini $DATADIR/witness_node_data_dir/config.ini
@@ -267,7 +272,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
   fi
   
   sleep 1
@@ -292,11 +297,11 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    #docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS
+    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v /dev/shm:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay
   fi
   
   sleep 1
@@ -309,7 +314,7 @@ replay() {
 
 shm_size() {
   echo "Setting SHM to $1"
-  sudo mount -o remount,size=$1 /dev/shm
+  sudo mount -o remount,size=$1 $SHM_DIR
 }
 
 stop() {
