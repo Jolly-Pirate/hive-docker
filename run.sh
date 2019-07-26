@@ -325,7 +325,7 @@ stop() {
     echo $CYAN"Waiting for container to stop cleanly"$RESET
     sleep 2
   done
-  docker logs witness --tail=8
+  docker logs $DOCKER_NAME --tail=8
   docker rm $DOCKER_NAME
 }
 
