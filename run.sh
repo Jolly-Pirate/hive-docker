@@ -319,7 +319,13 @@ shm_size() {
 
 stop() {
   echo $RED"Stopping and removing container $DOCKER_NAME..."$RESET
-  docker stop $DOCKER_NAME
+  time docker stop -t 600 $DOCKER_NAME
+  while [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]
+  do
+    echo $CYAN"Waiting for container to stop cleanly"$RESET
+    sleep 2
+  done
+  docker logs witness --tail=8
   docker rm $DOCKER_NAME
 }
 
