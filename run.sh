@@ -12,6 +12,7 @@ STEEM_VERSION="$2"
 BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=OFF"
 BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON"
 BUILD_TAG="steem:$STEEM_VERSION"
+BUILD_TAG_RPC="steem:$STEEM_VERSION-rpc"
 
 # get the version only
 # https://stackoverflow.com/a/42681464/5369345
@@ -103,6 +104,7 @@ help() {
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
+  echo "    install_rpc - pull latest rpc docker image from server (no compiling)"
   echo "    install_docker - install docker"
   echo "    install_ntp - install and configure NTP synchronization"
   echo "    logs - live logs of the running container"
@@ -193,12 +195,14 @@ build() {
   cd $DOCKER_DIR
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
+    echo $GREEN"Re-tagging the build as steem:latest"$RESET
+    docker tag $BUILD_TAG steem:latest
   fi
   if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
+    echo $GREEN"Re-tagging the build as steem:latest"$RESET
+    docker tag $BUILD_TAG_RPC steem:latest
   fi
-  echo $GREEN"Re-tagging the build as steem:latest"$RESET
-  docker tag $BUILD_TAG steem:latest
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
@@ -229,19 +233,29 @@ install_docker() {
 }
 
 install() {
-  echo "Loading image from someguy123/steem"
-  docker pull someguy123/steem
-  echo "Tagging as steem"
-  docker tag someguy123/steem steem
-  echo "Installation completed. You may now configure or run the server"
+  if [[ $STEEM_VERSION == "" ]]; then
+    echo $RED"Specify the steemd version to install, for example: ./run.sh install v0.20.12"$RESET
+    exit
+  fi
+  echo "Loading image from jollypirate/steem:$STEEM_VERSION"
+  docker pull jollypirate/steem:$STEEM_VERSION
+  if docker tag jollypirate/steem:$STEEM_VERSION steem; then
+    echo "Tagged as steem."
+    echo "Installation completed. You may now configure or run the server."
+  fi
 }
 
 install_rpc() {
-  echo "Loading image from someguy123/steem"
-  docker pull someguy123/steem:latest-full
-  echo "Tagging as steem"
-  docker tag someguy123/steem:latest-full steem
-  echo "Installation completed. You may now configure or run the server"
+  if [[ $STEEM_VERSION == "" ]]; then
+    echo $RED"Specify the steemd version to install, for example: ./run.sh install_rpc v0.20.12"$RESET
+    exit
+  fi
+  echo "Loading image from jollypirate/steem:$STEEM_VERSION"
+  docker pull jollypirate/steem:$STEEM_VERSION-rpc
+  if docker tag jollypirate/steem:$STEEM_VERSION-rpc steem; then
+    echo "Tagged as steem."
+    echo "Installation completed. You may now configure or run the server."
+  fi
 }
 
 container_exists() {
