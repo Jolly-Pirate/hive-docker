@@ -14,7 +14,7 @@ RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 	apt-get install -y curl nano net-tools wget jq \
     autoconf automake autotools-dev bsdmainutils build-essential cmake doxygen gdb git libboost-all-dev libyajl-dev \
     libreadline-dev libssl-dev libtool liblz4-tool ncurses-dev pkg-config python3 python3-dev python3-jinja2 python3-pip virtualenv \
-    libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev && \
+    libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev bc && \
 	# ubuntu 18.04 moved to openssl 1.1.1 causing too much problems, downgrading to 1.1.0g
     #if openssl version | grep -q 1.1.1; then apt-get install -y --allow-downgrades openssl=1.1.0g-2ubuntu4.3 libssl1.1=1.1.0g-2ubuntu4.3 libssl-dev=1.1.0g-2ubuntu4.3; fi &&
 	#openssl version ; sleep 5 &&
