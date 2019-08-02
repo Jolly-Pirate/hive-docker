@@ -11,8 +11,10 @@ DATADIR="$DIR/data"
 STEEM_VERSION="$2"
 BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=OFF"
 BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON"
+BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON"
 BUILD_TAG="steem:$STEEM_VERSION"
 BUILD_TAG_RPC="steem:$STEEM_VERSION-rpc"
+BUILD_TAG_RPCAH="steem:$STEEM_VERSION-rpcah"
 
 # get the version only
 # https://stackoverflow.com/a/42681464/5369345
@@ -104,7 +106,6 @@ help() {
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
-  echo "    install_rpc - pull latest rpc docker image from server (no compiling)"
   echo "    install_docker - install docker"
   echo "    install_ntp - install and configure NTP synchronization"
   echo "    logs - live logs of the running container"
@@ -145,28 +146,16 @@ optimize() {
 }
 
 version() {
-  if docker ps | grep -wq seed; then
-    echo "steemd -v" | docker exec -i seed bash
-    elif docker ps | grep -wq witness; then
-    echo "steemd -v" | docker exec -i witness bash
-    elif docker ps | grep -wq rpc; then
-    echo "steemd -v" | docker exec -i rpc bash
-    elif docker ps | grep -wq rpcah; then
-    echo "steemd -v" | docker exec -i rpcah bash
+  if docker ps | grep -wq $DOCKER_NAME; then
+    echo "steemd -v" | docker exec -i $DOCKER_NAME bash
   else
     echo "Container not running"
   fi
 }
 
 netstat() {
-  if docker ps | grep -q seed; then
-    echo "netstat -pevan | grep steemd" | docker exec -i seed bash
-    elif docker ps | grep -q witness; then
-    echo "netstat -pevan | grep steemd" | docker exec -i witness bash
-    elif docker ps | grep -q rpc; then
-    echo "netstat -pevan | grep steemd" | docker exec -i rpc bash
-    elif docker ps | grep -q rpcah; then
-    echo "netstat -pevan | grep steemd" | docker exec -i rpcah bash
+  if docker ps | grep -wq $DOCKER_NAME; then
+    echo "netstat -pevan | grep steemd" | docker exec -i $DOCKER_NAME bash
   else
     echo "Container not running"
   fi
@@ -195,14 +184,17 @@ build() {
   cd $DOCKER_DIR
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
-    echo $GREEN"Re-tagging the build as steem:latest"$RESET
     docker tag $BUILD_TAG steem:latest
   fi
-  if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
+  if [[ $CONTAINER_TYPE == "rpc" ]]; then
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
-    echo $GREEN"Re-tagging the build as steem:latest"$RESET
     docker tag $BUILD_TAG_RPC steem:latest
   fi
+  if [[ $CONTAINER_TYPE == "rpcah" ]]; then
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
+    docker tag $BUILD_TAG_RPCAH steem:latest
+  fi
+  echo $GREEN"Retagged the build as steem:latest"$RESET
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
@@ -240,19 +232,6 @@ install() {
   echo "Loading image from jollypirate/steem:$STEEM_VERSION"
   docker pull jollypirate/steem:$STEEM_VERSION
   if docker tag jollypirate/steem:$STEEM_VERSION steem; then
-    echo "Tagged as steem."
-    echo "Installation completed. You may now configure or run the server."
-  fi
-}
-
-install_rpc() {
-  if [[ $STEEM_VERSION == "" ]]; then
-    echo $RED"Specify the steemd version to install, for example: ./run.sh install_rpc v0.20.12"$RESET
-    exit
-  fi
-  echo "Loading image from jollypirate/steem:$STEEM_VERSION"
-  docker pull jollypirate/steem:$STEEM_VERSION-rpc
-  if docker tag jollypirate/steem:$STEEM_VERSION-rpc steem; then
     echo "Tagged as steem."
     echo "Installation completed. You may now configure or run the server."
   fi
@@ -333,7 +312,7 @@ shm_size() {
 
 stop() {
   echo $RED"Stopping and removing container $DOCKER_NAME..."$RESET
-  time docker stop -t 600 $DOCKER_NAME
+  time docker stop -t 300 $DOCKER_NAME
   while [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]
   do
     echo $CYAN"Waiting for container to stop cleanly"$RESET
@@ -396,9 +375,6 @@ case $1 in
   ;;
   install)
     install
-  ;;
-  install_rpc)
-    install_rpc
   ;;
   start)
     start
