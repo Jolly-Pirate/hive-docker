@@ -29,7 +29,7 @@ RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES
     # anyx fix for Unlinkable block p2p, merged Jan 7, 2019
 	#curl https://github.com/steemit/steem/commit/e66af33329e35a91ddf42abd6529b4bbdd9f7ec8.patch | git apply &&
     # 20.12/21.0 patch for https://github.com/steemit/steem/issues/3441
-    curl https://github.com/steemit/steem/commit/3308eb8d8f1a773536a5b08db33616786e58a4ca.patch | git apply && \
+    git cherry-pick 3308eb8d8f1a773536a5b08db33616786e58a4ca && \
 	git submodule update --init --recursive && \
 	# fix boost version
 	# curl https://github.com/steemit/steem/commit/89b5725ea32f90a7927d00491c678802e55e8d8a.patch | git apply &&
