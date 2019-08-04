@@ -33,7 +33,7 @@ RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES
     # cherry-pick works only when a github account is setup on the machine
     curl https://github.com/steemit/steem/commit/3308eb8d8f1a773536a5b08db33616786e58a4ca.patch | git apply && \
 	# fix static building
-	https://github.com/steemit/steem/commit/99ea30f88eecc8116ccdbeae8ca4911bf1738b5a.patch | git apply && \
+	curl https://github.com/steemit/steem/commit/99ea30f88eecc8116ccdbeae8ca4911bf1738b5a.patch | git apply && \
 	git submodule update --init --recursive && \
 	# fix boost version
 	# curl https://github.com/steemit/steem/commit/89b5725ea32f90a7927d00491c678802e55e8d8a.patch | git apply &&
