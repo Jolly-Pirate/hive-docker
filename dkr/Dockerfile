@@ -11,7 +11,7 @@ RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 	if echo $BUILD_SWITCHES | grep -q "MIRA=ON" ; then echo "Building with MIRA=ON";fi && \
 	sleep 5 && \
 	apt-get update && \
-	apt-get install -y bc curl nano net-tools wget jq \
+	apt-get install -y curl nano net-tools wget jq \
     autoconf automake autotools-dev bsdmainutils build-essential cmake doxygen gdb git libboost-all-dev libyajl-dev \
     libreadline-dev libssl-dev libtool liblz4-tool ncurses-dev pkg-config python3 python3-dev python3-jinja2 python3-pip virtualenv \
     libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev && \
@@ -43,7 +43,7 @@ RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES
 	cmake -DCMAKE_BUILD_TYPE=Release .. ${BUILD_SWITCHES} && \
 	# https://github.com/steemit/steem/issues/3369#issuecomment-505525258 temporary fix for 0.20.11 on bionic
 	#if echo $BUILD_SWITCHES | grep -q "MIRA=ON"; then make -j$(nproc); else make -j$(nproc) steemd && make -j$(nproc) cli_wallet; fi &&
-	make -j`echo $(nproc)-2 | bc` && \
+	make -j`expr $(nproc) - 2` && \
 	# install defaults to /usr/bin
 	make install && cd .. && rm -rf build && \
 	echo "\033[1mPlease configure me! You need to mount a data directory onto /steem of this container to it to function correctly. (if you're using Steem-in-a-box most of this is handled automatically)\033[0m"
