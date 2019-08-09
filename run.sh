@@ -116,7 +116,8 @@ help() {
   echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 60G"
   echo "    start - start steem container"
   echo "    status - show status of steem container"
-  echo "    stop - stop steem container"
+  echo "    stop - stop steem container (wait up to 300s for it to shutdown cleanly)"
+  echo "    kill - force stop steem container"
   echo "    version - get steemd version from the running container"
   echo "    wallet - open cli_wallet in the container"
   echo
@@ -313,15 +314,21 @@ shm_size() {
 stop() {
   echo $RED"Stopping and removing container $DOCKER_NAME..."$RESET
   time docker stop -t 300 $DOCKER_NAME
-  while [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]
-  do
-    echo $CYAN"Waiting for container to stop cleanly"$RESET
-    sleep 2
-  done
+  # no need to loop since we're waiting on the stop
+  #  while [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]
+  #  do
+  #    echo $CYAN"Waiting for container to stop cleanly"$RESET
+  #    sleep 2
+  #  done
   docker logs $DOCKER_NAME --tail=8
   docker rm $DOCKER_NAME
 }
 
+kill() {
+  echo $RED"Forcing stop and removing container $DOCKER_NAME..."$RESET
+  time docker stop $DOCKER_NAME
+  docker rm $DOCKER_NAME
+}
 enter() {
   docker exec -it $DOCKER_NAME bash
 }
@@ -387,6 +394,9 @@ case $1 in
   ;;
   stop)
     stop
+  ;;
+  kill)
+    kill
   ;;
   restart)
     stop
