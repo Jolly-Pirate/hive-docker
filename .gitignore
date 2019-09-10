@@ -8,4 +8,5 @@
 **/database.cfg
 **/logs
 **/p2p
+**/shared_memory.bin
 .env
