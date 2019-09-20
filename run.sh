@@ -134,14 +134,14 @@ optimize() {
   
   echo $GREEN'Configuring swappiness. Current setting:' $(cat /proc/sys/vm/swappiness)$RESET
   #swappiness
-  sudo sysctl vm.swappiness=1
+  sudo sysctl vm.swappiness=10
   #set swappiness on boot
   if ! grep -q -e '^vm.swappiness' /etc/sysctl.conf; then
     sudo cp -rpn /etc/sysctl.conf /etc/sysctl.bak
-    echo 'vm.swappiness = 1' | sudo tee -a /etc/sysctl.conf > /dev/null # -a append
+    echo 'vm.swappiness = 10' | sudo tee -a /etc/sysctl.conf > /dev/null # -a append
     grep -e '^vm.swappiness' /etc/sysctl.conf
   else
-    sudo sed -i /etc/sysctl.conf -r -e 's/^vm.swappiness.*=.*/vm.swappiness = 1/g'
+    sudo sed -i /etc/sysctl.conf -r -e 's/^vm.swappiness.*=.*/vm.swappiness = 10/g'
     grep -e '^vm.swappiness' /etc/sysctl.conf
   fi
 }
