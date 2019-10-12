@@ -64,7 +64,7 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah) ]]; then
+if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah|testnet) ]]; then
   echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, rpc or rpcah."$RESET
   exit
 fi
