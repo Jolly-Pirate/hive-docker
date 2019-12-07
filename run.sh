@@ -69,6 +69,14 @@ if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah|testnet) ]]; then
   exit
 fi
 
+if [[ $CONTAINER_TYPE == "testnet" && ! $CHAIN_ID ]]; then
+  echo $RED"Missing CHAIN_ID in .env for the testnet"$RESET
+  exit
+else
+  CHAIN_ID_PARAM="--chain-id="$CHAIN_ID
+  echo "Starting a testnet with "$CHAIN_ID_PARAM
+fi
+
 if [[ ! $DOCKER_NAME ]]; then
   echo $RED"DOCKER_NAME not defined in the .env file"$RESET
   exit
@@ -278,7 +286,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --tags-skip-startup-update
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir $CHAIN_ID_PARAM
   fi
   
   sleep 1
