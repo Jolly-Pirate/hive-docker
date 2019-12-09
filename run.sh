@@ -72,7 +72,9 @@ fi
 if [[ $CONTAINER_TYPE == "testnet" && ! $CHAIN_ID ]]; then
   echo $RED"Missing CHAIN_ID in .env for the testnet"$RESET
   exit
-else
+fi
+
+if [[ $CONTAINER_TYPE == "testnet" && $CHAIN_ID ]]; then
   CHAIN_ID_PARAM="--chain-id="$CHAIN_ID
   echo "Starting a testnet with "$CHAIN_ID_PARAM
 fi
