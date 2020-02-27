@@ -25,7 +25,7 @@ RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \
 	sleep 5 && \
 	cd ~ && \
-	git clone https://github.com/SteemDevs/steem.git && \
+	git clone https://github.com/steem/steem.git && \
 	cd steem && \
 	git checkout ${STEEM_VERSION} && \
 	git submodule update --init --recursive && \
