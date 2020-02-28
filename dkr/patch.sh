@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "\033[1mApplying custom patches\033[0m"
+echo -e "\033[1mApplying custom patches\033[0m"
  # anyx fix for Unlinkable block p2p, merged Jan 7, 2019
 #curl https://github.com/steemit/steem/commit/e66af33329e35a91ddf42abd6529b4bbdd9f7ec8.patch | git apply &&
 # 20.12/21.0 patch for https://github.com/steemit/steem/issues/3441
