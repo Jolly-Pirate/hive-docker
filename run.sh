@@ -216,11 +216,11 @@ build() {
     docker tag $BUILD_TAG_RPC steem:latest
   fi
   if [[ $CONTAINER_TYPE == "rpcah" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg --build-arg STEEM_SOURCE=$STEEM_SOURCE STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
     docker tag $BUILD_TAG_RPCAH steem:latest
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg --build-arg STEEM_SOURCE=$STEEM_SOURCE STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
     docker tag $BUILD_TAG_TESTNET steem:latest
   fi
   echo $GREEN"Retagged the build as steem:latest"$RESET
