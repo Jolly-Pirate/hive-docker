@@ -14,11 +14,11 @@ BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -
 BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON -DSTEEM_STATIC_BUILD=ON"
 
 BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=OFF -DSTEEM_STATIC_BUILD=ON \
-   -DBUILD_STEEM_TESTNET=ON \
-   -DENABLE_SMT_SUPPORT=ON \
-   -DCHAINBASE_CHECK_LOCKING=ON \
-   -DSTEEM_LINT_LEVEL=OFF"
-   
+-DBUILD_STEEM_TESTNET=ON \
+-DENABLE_SMT_SUPPORT=ON \
+-DCHAINBASE_CHECK_LOCKING=ON \
+-DSTEEM_LINT_LEVEL=OFF"
+
 BUILD_TAG="steem:$STEEM_VERSION"
 BUILD_TAG_RPC="steem:$STEEM_VERSION-rpc"
 BUILD_TAG_RPCAH="steem:$STEEM_VERSION-rpcah"
@@ -201,20 +201,26 @@ install_ntp() {
 build() {
   echo $GREEN"Building image $BUILD_TAG"$RESET
   cd $DOCKER_DIR
+  if [[ $STEEM_SOURCE ]]; then
+    echo $RED"Custom Github repo: $STEEM_SOURCE"$RESET
+  else
+    STEEM_SOURCE="https://github.com/steemit/steem.git"
+    echo $RED"Default Github repo: $STEEM_SOURCE"$RESET
+  fi
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
     docker tag $BUILD_TAG steem:latest
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
     docker tag $BUILD_TAG_RPC steem:latest
   fi
   if [[ $CONTAINER_TYPE == "rpcah" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg --build-arg STEEM_SOURCE=$STEEM_SOURCE STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
     docker tag $BUILD_TAG_RPCAH steem:latest
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg --build-arg STEEM_SOURCE=$STEEM_SOURCE STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
     docker tag $BUILD_TAG_TESTNET steem:latest
   fi
   echo $GREEN"Retagged the build as steem:latest"$RESET
