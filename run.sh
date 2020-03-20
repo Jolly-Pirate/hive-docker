@@ -289,12 +289,15 @@ container_running() {
 # Please move your data directory to '/root/.steemd' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
 
 start() {
-  echo $GREEN"Starting container..."$RESET
+  if [[ $1 == "force" ]]; then # $1 passed through the function
+    FORCE_OPEN="--force-open"
+  fi
+  echo $GREEN"Starting container... $FORCE_OPEN"$RESET
   container_exists
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir $CHAIN_ID_PARAM
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
   fi
   
   sleep 1
@@ -412,7 +415,7 @@ case $1 in
     install
   ;;
   start)
-    start
+    start $2
   ;;
   replay)
     replay
