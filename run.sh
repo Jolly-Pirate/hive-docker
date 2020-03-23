@@ -5,24 +5,21 @@
 # Modified from Someguy123
 #
 
+BOLD="$(tput bold)"
+RED="$(tput setaf 1)"
+GREEN="$(tput setaf 2)"
+YELLOW="$(tput setaf 3)"
+BLUE="$(tput setaf 4)"
+MAGENTA="$(tput setaf 5)"
+CYAN="$(tput setaf 6)"
+WHITE="$(tput setaf 7)"
+RESET="$(tput sgr0)"
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
-STEEM_VERSION="$2"
-BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=OFF -DSTEEM_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=ON -DSTEEM_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=ON -DSTEEM_STATIC_BUILD=ON"
-
-BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=OFF -DSTEEM_STATIC_BUILD=ON \
--DBUILD_STEEM_TESTNET=ON \
--DENABLE_SMT_SUPPORT=ON \
--DCHAINBASE_CHECK_LOCKING=ON \
--DSTEEM_LINT_LEVEL=OFF"
-
-BUILD_TAG="steem:$STEEM_VERSION"
-BUILD_TAG_RPC="steem:$STEEM_VERSION-rpc"
-BUILD_TAG_RPCAH="steem:$STEEM_VERSION-rpcah"
-BUILD_TAG_TESTNET="steem:$STEEM_VERSION-testnet"
+BUILD_VERSION="$2"
+MIRA="$3"
 
 # get the version only
 # https://stackoverflow.com/a/42681464/5369345
@@ -32,7 +29,7 @@ function versionToInt() {
   let val=1000000*parts[0]+1000*parts[1]+parts[2]
   echo $val
 }
-VER="$( echo ${STEEM_VERSION#"v"} )"
+VER="$( echo ${BUILD_VERSION#"v"} )"
 # only numbers in version
 if [[ $VER =~ ^[0-9.]+$ ]]; then
   versionIsNum=1
@@ -43,16 +40,6 @@ if [[ $val -lt 20011 && versionIsNum -eq 1 ]]; then
 else # handles master, stable too
   BUILD_OS="ubuntu:bionic"
 fi
-
-BOLD="$(tput bold)"
-RED="$(tput setaf 1)"
-GREEN="$(tput setaf 2)"
-YELLOW="$(tput setaf 3)"
-BLUE="$(tput setaf 4)"
-MAGENTA="$(tput setaf 5)"
-CYAN="$(tput setaf 6)"
-WHITE="$(tput setaf 7)"
-RESET="$(tput sgr0)"
 
 # default. override in .env
 PORTS="2001"
@@ -99,10 +86,34 @@ if [[ $CONTAINER_TYPE == "witness" ]] && grep -q -e '^p2p-endpoint.*=.*' $DATADI
   sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^p2p-endpoint/# p2p-endpoint/g'
 fi
 
-if [[ $1 == *"build"* && $2 == "" ]]; then
-  echo $RED"Specify the steemd version to build, for example: ./run.sh build master"$RESET
-  exit
+if [[ $1 == *"build"* ]]; then
+  if [[ $2 == "" ]]; then
+    echo $RED"Specify the steemd version to build, for example: ./run.sh build master"$RESET
+    exit
+  fi
+  if [[ $3 == "mira" ]]; then
+    MIRA="ON"
+	MIRA_TAG="-mira"
+  else
+    MIRA="OFF"
+	MIRA_TAG=""
+  fi
+  echo $RED"Building with MIRA=$MIRA"$RESET
 fi
+
+BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON"
+BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON \
+-DBUILD_STEEM_TESTNET=ON \
+-DENABLE_SMT_SUPPORT=ON \
+-DCHAINBASE_CHECK_LOCKING=ON \
+-DSTEEM_LINT_LEVEL=OFF"
+
+BUILD_TAG="steem:$BUILD_VERSION$MIRA_TAG"
+BUILD_TAG_RPC="steem:$BUILD_VERSION-rpc$MIRA_TAG"
+BUILD_TAG_RPCAH="steem:$BUILD_VERSION-rpcah$MIRA_TAG"
+BUILD_TAG_TESTNET="steem:$BUILD_VERSION-testnet$MIRA_TAG"
 
 IFS=","
 DPORTS=""
@@ -121,6 +132,7 @@ help() {
   echo
   echo "Commands: "
   echo "    build - build steem container (seed, witness, rpc or rpcah) from docker file (pass steem version as argument)"
+  echo "            to build with MIRA, add mira as last argument, e.g. ./run.sh build 0.23.0 mira"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
@@ -201,29 +213,29 @@ install_ntp() {
 build() {
   echo $GREEN"Building image $BUILD_TAG"$RESET
   cd $DOCKER_DIR
-  if [[ $STEEM_SOURCE ]]; then
-    echo $RED"Custom Github repo: $STEEM_SOURCE"$RESET
+  if [[ $REPO_SOURCE ]]; then
+    echo $RED"Custom Github repo: $REPO_SOURCE"$RESET
   else
-    STEEM_SOURCE="https://github.com/steemit/steem.git"
-    echo $RED"Default Github repo: $STEEM_SOURCE"$RESET
+    REPO_SOURCE="https://github.com/steemit/steem.git"
+    echo $RED"Default Github repo: $REPO_SOURCE"$RESET
   fi
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
-    docker tag $BUILD_TAG steem:latest
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
+    #docker tag $BUILD_TAG steem:latest
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
-    docker tag $BUILD_TAG_RPC steem:latest
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
+    #docker tag $BUILD_TAG_RPC steem:latest
   fi
   if [[ $CONTAINER_TYPE == "rpcah" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
-    docker tag $BUILD_TAG_RPCAH steem:latest
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
+    #docker tag $BUILD_TAG_RPCAH steem:latest
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg STEEM_SOURCE=$STEEM_SOURCE --build-arg STEEM_VERSION=$STEEM_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
-    docker tag $BUILD_TAG_TESTNET steem:latest
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
+    #docker tag $BUILD_TAG_TESTNET steem:latest
   fi
-  echo $GREEN"Retagged the build as steem:latest"$RESET
+  echo $GREEN"Docker Image built as $BUILD_TAG"$RESET
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
@@ -254,14 +266,20 @@ install_docker() {
 }
 
 install() {
-  if [[ $STEEM_VERSION == "" ]]; then
+  if [[ $BUILD_VERSION == "" ]]; then
     echo $RED"Specify the steemd version to install, for example: ./run.sh install v0.20.12"$RESET
     exit
   fi
-  echo "Loading image from jollypirate/steem:$STEEM_VERSION"
-  docker pull jollypirate/steem:$STEEM_VERSION
-  if docker tag jollypirate/steem:$STEEM_VERSION steem; then
-    echo "Tagged as steem."
+  echo "Loading image from jollypirate/steem:$BUILD_VERSION"
+  docker pull jollypirate/steem:$BUILD_VERSION
+  if docker tag jollypirate/steem:$BUILD_VERSION steem:$BUILD_VERSION; then
+    echo "Tagged as steem:$BUILD_VERSION"
+    # Prompt to update .env
+    read -e -p "Add/Update TAG_VERSION to the .env file? [Y/n] " YN
+    [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
+    if ! grep -q TAG_VERSION .env; then echo TAG_VERSION >> .env; fi &&
+    sed -i .env -r -e  "s/^TAG_VERSION.*/TAG_VERSION=$BUILD_VERSION/g"
+    
     echo "Installation completed. You may now configure or run the server."
   fi
 }
@@ -297,7 +315,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem:$TAG_VERSION steemd --data-dir=/steem/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
   fi
   
   sleep 1
@@ -323,10 +341,10 @@ replay() {
     fi
     echo $RPC_FEEDS $RPC_TAGS
     #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION steemd --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION steemd --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000
   fi
   
   sleep 1

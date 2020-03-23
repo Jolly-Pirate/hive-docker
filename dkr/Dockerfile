@@ -3,14 +3,14 @@ ARG BUILD_OS
 FROM ${BUILD_OS}
 
 ARG BUILD_OS
-ARG STEEM_VERSION
+ARG BUILD_VERSION
 ARG BUILD_SWITCHES
-ARG STEEM_SOURCE
+ARG REPO_SOURCE
 
 ADD patch.sh /
 
 RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
-    echo "Building $STEEM_VERSION image in $BUILD_OS from $STEEM_SOURCE" && \
+    echo "Building $BUILD_VERSION image in $BUILD_OS from $REPO_SOURCE" && \
 	if echo $BUILD_SWITCHES | grep -q "MIRA=ON" ; then echo "Building with MIRA=ON";fi && \
 	sleep 5 && \
 	apt-get update && \
@@ -23,12 +23,12 @@ RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 	#openssl version ; sleep 5 &&
 	apt-get clean -qy
 
-RUN echo "\033[1mBuilding steemd version: ${STEEM_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \
+RUN echo "\033[1mBuilding steemd version: ${BUILD_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \
 	sleep 5 && \
 	cd ~ && \
-	git clone ${STEEM_SOURCE} && \
-	cd steem && \
-	git checkout ${STEEM_VERSION} && \
+	git clone ${REPO_SOURCE} clonedir && \
+	cd clonedir && \
+	git checkout ${BUILD_VERSION} && \
 	git submodule update --init --recursive && \
 	# apply the custom patches
 	/patch.sh && \
