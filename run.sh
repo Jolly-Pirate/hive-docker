@@ -93,10 +93,10 @@ if [[ $1 == *"build"* ]]; then
   fi
   if [[ $3 == "mira" ]]; then
     MIRA="ON"
-	MIRA_TAG="-mira"
+    MIRA_TAG="-mira"
   else
     MIRA="OFF"
-	MIRA_TAG=""
+    MIRA_TAG=""
   fi
   echo $RED"Building with MIRA=$MIRA"$RESET
 fi
@@ -211,7 +211,6 @@ install_ntp() {
 }
 
 build() {
-  echo $GREEN"Building image $BUILD_TAG"$RESET
   cd $DOCKER_DIR
   if [[ $REPO_SOURCE ]]; then
     echo $RED"Custom Github repo: $REPO_SOURCE"$RESET
@@ -220,22 +219,26 @@ build() {
     echo $RED"Default Github repo: $REPO_SOURCE"$RESET
   fi
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
+    echo $GREEN"Building image $BUILD_TAG"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
-    #docker tag $BUILD_TAG steem:latest
+    BUILT_IMAGE=$BUILD_TAG
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
+    echo $GREEN"Building image $BUILD_TAG_RPC"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
-    #docker tag $BUILD_TAG_RPC steem:latest
+    BUILT_IMAGE=$BUILD_TAG_RPC
   fi
   if [[ $CONTAINER_TYPE == "rpcah" ]]; then
+    echo $GREEN"Building image $BUILD_TAG_RPCAH"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
-    #docker tag $BUILD_TAG_RPCAH steem:latest
+    BUILT_IMAGE=$BUILD_TAG_RPCAH
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
+    echo $GREEN"Building image $BUILD_TAG_TESTNET"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
-    #docker tag $BUILD_TAG_TESTNET steem:latest
+    BUILT_IMAGE=$BUILD_TAG_TESTNET
   fi
-  echo $GREEN"Docker Image built as $BUILD_TAG"$RESET
+  echo $GREEN"Docker image built $BUILT_IMAGE"$RESET
   echo $GREEN"Removing remnant docker images"$RESET
   docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
 }
