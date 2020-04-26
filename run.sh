@@ -115,7 +115,7 @@ BUILD_TAG_RPC="steem:$BUILD_VERSION-rpc$MIRA_TAG"
 BUILD_TAG_RPCAH="steem:$BUILD_VERSION-rpcah$MIRA_TAG"
 BUILD_TAG_TESTNET="steem:$BUILD_VERSION-testnet$MIRA_TAG"
 
-IFS=","
+IFS=" "
 DPORTS=""
 for i in $PORTS; do
   if [[ $i != "" ]]; then
