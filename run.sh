@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Steem node manager
+# Hive node manager
 # Released under GNU AGPL by Jolly-Pirate
 # Modified from Someguy123
 #
@@ -101,19 +101,19 @@ if [[ $1 == *"build"* ]]; then
   echo $RED"Building with MIRA=$MIRA"$RESET
 fi
 
-BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON"
-BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DSTEEM_STATIC_BUILD=ON \
--DBUILD_STEEM_TESTNET=ON \
+BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON \
+-DBUILD_HIVE_TESTNET=ON \
 -DENABLE_SMT_SUPPORT=ON \
 -DCHAINBASE_CHECK_LOCKING=ON \
--DSTEEM_LINT_LEVEL=OFF"
+-DHIVE_LINT_LEVEL=OFF"
 
-BUILD_TAG="steem:$BUILD_VERSION$MIRA_TAG"
-BUILD_TAG_RPC="steem:$BUILD_VERSION-rpc$MIRA_TAG"
-BUILD_TAG_RPCAH="steem:$BUILD_VERSION-rpcah$MIRA_TAG"
-BUILD_TAG_TESTNET="steem:$BUILD_VERSION-testnet$MIRA_TAG"
+BUILD_TAG="hive:$BUILD_VERSION$MIRA_TAG"
+BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc$MIRA_TAG"
+BUILD_TAG_RPCAH="hive:$BUILD_VERSION-rpcah$MIRA_TAG"
+BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet$MIRA_TAG"
 
 IFS=","
 DPORTS=""
@@ -131,7 +131,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build steem container (seed, witness, rpc or rpcah) from docker file (pass steem version as argument)"
+  echo "    build - build hive container (seed, witness, rpc or rpcah) from docker file (pass hive version as argument)"
   echo "            to build with MIRA, add mira as last argument, e.g. ./run.sh build 0.23.0 mira"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
@@ -141,13 +141,13 @@ help() {
   echo "    logs - live logs of the running container"
   echo "    preinstall - install linux utils packages"
   echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
-  echo "    replay - start steem container in replay mode"
-  echo "    restart - restart steem container"
+  echo "    replay - start hive container in replay mode"
+  echo "    restart - restart hive container"
   echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 60G"
-  echo "    start - start steem container"
-  echo "    status - show status of steem container"
-  echo "    stop - stop steem container (wait up to 300s for it to shutdown cleanly)"
-  echo "    kill - force stop steem container"
+  echo "    start - start hive container"
+  echo "    status - show status of hive container"
+  echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
+  echo "    kill - force stop hive container"
   echo "    version - get hived version from the running container"
   echo "    wallet - open cli_wallet in the container"
   echo
@@ -215,7 +215,7 @@ build() {
   if [[ $REPO_SOURCE ]]; then
     echo $RED"Custom Github repo: $REPO_SOURCE"$RESET
   else
-    REPO_SOURCE="https://github.com/steemit/steem.git"
+    REPO_SOURCE="https://github.com/hiveit/hive.git"
     echo $RED"Default Github repo: $REPO_SOURCE"$RESET
   fi
   if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
@@ -249,7 +249,7 @@ dlblocks() {
   sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log
   sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log.index
   echo "Download @gtg's block logs..."
-  wget https://gtg.steem.house/get/blockchain.xz/block_log.xz -O $DATADIR/witness_node_data_dir/blockchain/block_log.xz
+  wget https://gtg.hive.house/get/blockchain.xz/block_log.xz -O $DATADIR/witness_node_data_dir/blockchain/block_log.xz
   echo "Decompressing block log... this may take a while..."
   xz -d $DATADIR/witness_node_data_dir/blockchain/block_log.xz -v
   echo "FINISHED. Blockchain downloaded and decompressed"
@@ -273,10 +273,10 @@ install() {
     echo $RED"Specify the hived version to install, for example: ./run.sh install v0.20.12"$RESET
     exit
   fi
-  echo "Loading image from jollypirate/steem:$BUILD_VERSION"
-  docker pull jollypirate/steem:$BUILD_VERSION
-  if docker tag jollypirate/steem:$BUILD_VERSION steem:$BUILD_VERSION; then
-    echo "Tagged as steem:$BUILD_VERSION"
+  echo "Loading image from jollypirate/hive:$BUILD_VERSION"
+  docker pull jollypirate/hive:$BUILD_VERSION
+  if docker tag jollypirate/hive:$BUILD_VERSION hive:$BUILD_VERSION; then
+    echo "Tagged as hive:$BUILD_VERSION"
     # Prompt to update .env
     read -e -p "Add/Update TAG_VERSION to the .env file? [Y/n] " YN
     [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
@@ -306,8 +306,8 @@ container_running() {
 }
 
 # Important for AppBase:
-# The default data directory is now '/root/.hived' instead of '/steem/witness_node_data_dir'.
-# Please move your data directory to '/root/.hived' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
+# The default data directory is now '/root/.hived' instead of '/hive/witness_node_data_dir'.
+# Please move your data directory to '/root/.hived' or specify '--data-dir=/hive/witness_node_data_dir' to continue using the current data directory.
 
 start() {
   if [[ $1 == "force" ]]; then # $1 passed through the function
@@ -318,7 +318,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem:$TAG_VERSION hived --data-dir=/steem/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
   fi
   
   sleep 1
@@ -343,11 +343,11 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem hived --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION hived --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
+    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive hived --data-dir=/hive/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION hived --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay --set-benchmark-interval 100000
   fi
   
   sleep 1
@@ -390,7 +390,7 @@ wallet() {
 }
 
 remote_wallet() {
-  docker run -v "$DATADIR":/steem --rm -it steem cli_wallet -s wss://hived.privex.io
+  docker run -v "$DATADIR":/hive --rm -it hive cli_wallet -s wss://hived.privex.io
 }
 
 logs() {

@@ -23,7 +23,7 @@ RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
 	#openssl version ; sleep 5 &&
 	apt-get clean -qy
 
-RUN echo "\033[1mBuilding steemd version: ${BUILD_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \
+RUN echo "\033[1mBuilding hived version: ${BUILD_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \
 	sleep 5 && \
 	cd ~ && \
 	git clone ${REPO_SOURCE} clonedir && \
@@ -39,7 +39,7 @@ RUN echo "\033[1mBuilding steemd version: ${BUILD_VERSION} with ${BUILD_SWITCHES
 	make -j`expr $(nproc) - 2` && \
 	# install defaults to /usr/bin
 	make install && cd .. && rm -rf build && \
-	echo "\033[1mPlease configure me! You need to mount a data directory onto /steem of this container to it to function correctly. (if you're using Steem-in-a-box most of this is handled automatically)\033[0m"
+	echo "\033[1mPlease configure me! You need to mount a data directory onto /hive of this container to it to function correctly. (if you're using Hive-in-a-box most of this is handled automatically)\033[0m"
 
 # P2P (seed) port
 EXPOSE 2001
@@ -47,7 +47,7 @@ EXPOSE 2001
 EXPOSE 5000
 EXPOSE 8090
 
-VOLUME /steem
-WORKDIR /steem
+VOLUME /hive
+WORKDIR /hive
 
-CMD ["sh", "-c", "/usr/bin/steemd"]
+CMD ["sh", "-c", "/usr/bin/hived"]
