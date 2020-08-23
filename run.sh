@@ -88,7 +88,7 @@ fi
 
 if [[ $1 == *"build"* ]]; then
   if [[ $2 == "" ]]; then
-    echo $RED"Specify the steemd version to build, for example: ./run.sh build master"$RESET
+    echo $RED"Specify the hived version to build, for example: ./run.sh build master"$RESET
     exit
   fi
   if [[ $3 == "mira" ]]; then
@@ -148,7 +148,7 @@ help() {
   echo "    status - show status of steem container"
   echo "    stop - stop steem container (wait up to 300s for it to shutdown cleanly)"
   echo "    kill - force stop steem container"
-  echo "    version - get steemd version from the running container"
+  echo "    version - get hived version from the running container"
   echo "    wallet - open cli_wallet in the container"
   echo
   exit
@@ -178,7 +178,7 @@ optimize() {
 
 version() {
   if docker ps | grep -wq $DOCKER_NAME; then
-    echo "steemd -v" | docker exec -i $DOCKER_NAME bash
+    echo "hived -v" | docker exec -i $DOCKER_NAME bash
   else
     echo "Container not running"
   fi
@@ -186,7 +186,7 @@ version() {
 
 netstat() {
   if docker ps | grep -wq $DOCKER_NAME; then
-    echo "netstat -pevan | grep steemd" | docker exec -i $DOCKER_NAME bash
+    echo "netstat -pevan | grep hived" | docker exec -i $DOCKER_NAME bash
   else
     echo "Container not running"
   fi
@@ -270,7 +270,7 @@ install_docker() {
 
 install() {
   if [[ $BUILD_VERSION == "" ]]; then
-    echo $RED"Specify the steemd version to install, for example: ./run.sh install v0.20.12"$RESET
+    echo $RED"Specify the hived version to install, for example: ./run.sh install v0.20.12"$RESET
     exit
   fi
   echo "Loading image from jollypirate/steem:$BUILD_VERSION"
@@ -306,8 +306,8 @@ container_running() {
 }
 
 # Important for AppBase:
-# The default data directory is now '/root/.steemd' instead of '/steem/witness_node_data_dir'.
-# Please move your data directory to '/root/.steemd' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
+# The default data directory is now '/root/.hived' instead of '/steem/witness_node_data_dir'.
+# Please move your data directory to '/root/.hived' or specify '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
 
 start() {
   if [[ $1 == "force" ]]; then # $1 passed through the function
@@ -318,7 +318,7 @@ start() {
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem:$TAG_VERSION steemd --data-dir=/steem/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t steem:$TAG_VERSION hived --data-dir=/steem/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
   fi
   
   sleep 1
@@ -343,11 +343,11 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem steemd --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION steemd --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
+    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem hived --data-dir=/steem/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION hived --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION steemd --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/steem -d --log-opt max-size=1g --name $DOCKER_NAME -t steem:$TAG_VERSION hived --data-dir=/steem/witness_node_data_dir --replay --set-benchmark-interval 100000
   fi
   
   sleep 1
@@ -390,7 +390,7 @@ wallet() {
 }
 
 remote_wallet() {
-  docker run -v "$DATADIR":/steem --rm -it steem cli_wallet -s wss://steemd.privex.io
+  docker run -v "$DATADIR":/steem --rm -it steem cli_wallet -s wss://hived.privex.io
 }
 
 logs() {
