@@ -144,6 +144,7 @@ help() {
   echo "    replay - start hive container in replay mode"
   echo "    restart - restart hive container"
   echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 60G"
+  echo "    snapshot - stop the container, take a snapshot and resume hived. example: ./run.sh snapshot snapshot_name"
   echo "    start - start hive container"
   echo "    status - show status of hive container"
   echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
@@ -329,6 +330,16 @@ start() {
   fi
 }
 
+snapshot() {
+  if [[ "$1" ]]; then # $1 passed through the function
+    stop
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -it hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --dump-snapshot "$1"
+    logs # monitor the snapshot
+  else
+    echo $RED"Missing snapshot name, pass it as argument, i.e. ./run.sh snapshot snapshot_name"$RESET
+  fi
+}
+
 replay() {
   stop
   
@@ -453,6 +464,9 @@ case $1 in
   restart)
     stop
     start
+  ;;
+  snapshot)
+    snapshot $2
   ;;
   optimize)
     echo "Applying recommended dirty write settings..."

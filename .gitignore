@@ -9,4 +9,5 @@
 **/logs
 **/p2p
 **/shared_memory.bin
+**/snapshot
 .env
