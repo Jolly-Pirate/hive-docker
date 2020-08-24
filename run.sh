@@ -144,7 +144,7 @@ help() {
   echo "    replay - start hive container in replay mode"
   echo "    restart - restart hive container"
   echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 60G"
-  echo "    snapshot - stop the container, take a snapshot and resume hived. example: ./run.sh snapshot snapshot_name"
+  echo "    snapshot - stop the container, dump/load snapshot and resume hived. example: ./run.sh snapshot <dump or load> snapshot_name"
   echo "    start - start hive container"
   echo "    status - show status of hive container"
   echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
@@ -331,13 +331,24 @@ start() {
 }
 
 snapshot() {
-  if [[ "$1" ]]; then # $1 passed through the function
+  if [[ $1 =~ dump|load && "$2" ]]; then # $1 and $2 passed through the function
     stop
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -it hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --dump-snapshot "$1"
-    logs # monitor the snapshot
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
+    #logs # monitor the snapshot
   else
-    echo $RED"Missing snapshot name, pass it as argument, i.e. ./run.sh snapshot snapshot_name"$RESET
+    echo $RED"Missing snapshot command/name, pass them as arguments, i.e. ./run.sh snapshot <dump or load> snapshot_name"$RESET
   fi
+  
+  sleep 1
+  if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+    echo $GREEN"Container $DOCKER_NAME successfully started"
+    echo "Waiting for snapshot process to finish, you can monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
+    time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
+    echo $GREEN$"Snapshot size/location:" $(du -hs "data/witness_node_data_dir/snapshot/$2")$RESET # get the size
+  else
+    echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+  fi
+  
 }
 
 replay() {
@@ -466,7 +477,7 @@ case $1 in
     start
   ;;
   snapshot)
-    snapshot $2
+    snapshot $2 $3
   ;;
   optimize)
     echo "Applying recommended dirty write settings..."
