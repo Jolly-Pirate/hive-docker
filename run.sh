@@ -335,20 +335,18 @@ snapshot() {
     stop
     docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
     #logs # monitor the snapshot
+    sleep 1
+    if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+      echo $GREEN"Container $DOCKER_NAME successfully started"
+      echo "Waiting for snapshot process to finish, you can monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
+      time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
+      echo $GREEN$"Snapshot size/location:" $(du -hs "data/witness_node_data_dir/snapshot/$2")$RESET # get the size
+    else
+      echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+    fi
   else
     echo $RED"Missing snapshot command/name, pass them as arguments, i.e. ./run.sh snapshot <dump or load> snapshot_name"$RESET
   fi
-  
-  sleep 1
-  if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
-    echo $GREEN"Container $DOCKER_NAME successfully started"
-    echo "Waiting for snapshot process to finish, you can monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
-    time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
-    echo $GREEN$"Snapshot size/location:" $(du -hs "data/witness_node_data_dir/snapshot/$2")$RESET # get the size
-  else
-    echo $RED"Container $DOCKER_NAME didn't start!"$RESET
-  fi
-  
 }
 
 replay() {
