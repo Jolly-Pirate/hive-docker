@@ -1,6 +1,7 @@
 **/*.*~
 **/*.bak
 **/*.json
+**/*.tgz
 **/backup
 **/block_log*
 **/config.ini

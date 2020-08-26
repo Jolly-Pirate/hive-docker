@@ -143,8 +143,11 @@ help() {
   echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
   echo "    replay - start hive container in replay mode"
   echo "    restart - restart hive container"
-  echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 60G"
-  echo "    snapshot - stop the container, dump/load snapshot and resume hived. example: ./run.sh snapshot <dump or load> snapshot_name"
+  echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 20G"
+  echo "    snapshot <dump|load|pack|unpack> snapshot_name
+              dump|load: stop the container, dump/load snapshot and resume hived
+              pack: compress the snapshot with tar+gzip
+  unpack: decompress the snapshot (pass the snapshot filename without the .tgz extension)"
   echo "    start - start hive container"
   echo "    status - show status of hive container"
   echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
@@ -331,27 +334,45 @@ start() {
 }
 
 snapshot() {
-  if [[ $1 =~ dump|load && "$2" ]]; then # $1 and $2 passed through the function
-    stop
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
-    #logs # monitor the snapshot
-    sleep 1
-    if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
-      echo $GREEN"Container $DOCKER_NAME successfully started"
-      echo "Waiting for snapshot process to finish, you can monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
-      time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
-      echo $GREEN$"Snapshot size/location:" $(du -hs "data/witness_node_data_dir/snapshot/$2")$RESET # get the size
-    else
-      echo $RED"Container $DOCKER_NAME didn't start!"$RESET
-    fi
+  if [[ "$1" && "$2" ]]; then # $1 and $2 passed through the function
+    curdir=$(pwd)
+    case $1 in
+      dump|load)
+        stop
+        docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
+        #logs # monitor the snapshot
+        sleep 1
+        if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+          echo $GREEN"Container $DOCKER_NAME successfully started"
+          echo "Waiting for snapshot process to finish, you can ctrl-c this dialog and monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
+          time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
+          echo $GREEN$"Snapshot size/location:" $(du -hs "data/witness_node_data_dir/snapshot/$2")$RESET # get the size
+        else
+          echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+        fi
+      ;;
+      pack)
+        if [[ -d "data/witness_node_data_dir/snapshot/$2" ]]; then
+          echo $GREEN$"Packing snapshot '$2' to current folder"$RESET # get the size
+          cd "data/witness_node_data_dir/snapshot"
+          sudo tar czvf "$curdir/$2.tgz" "$2"
+        else
+          echo $RED"Snapshot $2 folder missing"$RESET
+        fi
+      ;;
+      unpack)
+        mkdir -p data/witness_node_data_dir/snapshot # create the folder if doesn't exist
+        sudo tar xzvf "$curdir/$2.tgz" -C "data/witness_node_data_dir/snapshot/"
+      ;;
+    esac
   else
-    echo $RED"Missing snapshot command/name, pass them as arguments, i.e. ./run.sh snapshot <dump or load> snapshot_name"$RESET
+    echo $RED"Missing snapshot command and name, pass them as arguments, e.g. ./run.sh snapshot <dump, load, pack or unpack> snapshot_name"$RESET
   fi
 }
 
 replay() {
   stop
-  
+
   if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
     echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
     LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
