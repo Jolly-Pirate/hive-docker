@@ -324,12 +324,47 @@ start() {
   if [[ $1 == "force" ]]; then # $1 passed through the function
     FORCE_OPEN="--force-open"
   fi
-  echo $GREEN"Starting container... $FORCE_OPEN"$RESET
+  echo $GREEN"Starting container with $FORCE_OPEN"$RESET
+  
   container_exists
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
     docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
+  fi
+  
+  sleep 1
+  if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+    echo $GREEN"Container $DOCKER_NAME successfully started"$RESET
+  else
+    echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+  fi
+}
+
+replay() {
+  stop
+  
+  if [[ $1 == "force" ]]; then # eclipse will try to resume replay, force it to replay from scratch
+    FORCE_REPLAY="--force-replay"
+    echo $GREEN"Starting container with $FORCE_REPLAY"$RESET
+  fi
+  
+  if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
+    echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
+    LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
+    #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
+    RPC_FEEDS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
+    if grep -q data/witness_node_data_dir/config.ini -e '^plugin.*tags.*' ; then
+      RPC_TAGS="--tags-start-promoted=$LAST_WEEK_UTC_DATE"
+    else
+      RPC_TAGS=""
+    fi
+    echo $RPC_FEEDS $RPC_TAGS
+    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive hived --data-dir=/hive/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000 $RPC_FEEDS
+  else
+    echo "Replaying $CONTAINER_TYPE node..."
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000
   fi
   
   sleep 1
@@ -374,35 +409,6 @@ snapshot() {
     esac
   else
     echo $RED"Missing snapshot command and name, pass them as arguments, e.g. ./run.sh snapshot <dump, load, pack or unpack> snapshot_name"$RESET
-  fi
-}
-
-replay() {
-  stop
-
-  if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
-    echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
-    LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
-    #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
-    RPC_FEEDS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
-    if grep -q data/witness_node_data_dir/config.ini -e '^plugin.*tags.*' ; then
-      RPC_TAGS="--tags-start-promoted=$LAST_WEEK_UTC_DATE"
-    else
-      RPC_TAGS=""
-    fi
-    echo $RPC_FEEDS $RPC_TAGS
-    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive hived --data-dir=/hive/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay --set-benchmark-interval 100000 $RPC_FEEDS
-  else
-    echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay --set-benchmark-interval 100000
-  fi
-  
-  sleep 1
-  if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
-    echo $GREEN"Container $DOCKER_NAME successfully started"$RESET
-  else
-    echo $RED"Container $DOCKER_NAME didn't start!"$RESET
   fi
 }
 
@@ -487,7 +493,7 @@ case $1 in
     start $2
   ;;
   replay)
-    replay
+    replay $2
   ;;
   shm_size)
     shm_size $2
