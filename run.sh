@@ -51,8 +51,8 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah|testnet) ]]; then
-  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, rpc or rpcah."$RESET
+if [[ $CONTAINER_TYPE != +(seed|witness|eclipse|rpc|rpcah|testnet) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, eclipse, rpc or rpcah."$RESET
   exit
 fi
 
@@ -102,7 +102,8 @@ if [[ $1 == *"build"* ]]; then
 fi
 
 BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_ECLIPSE="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
 BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
 BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON \
 -DBUILD_HIVE_TESTNET=ON \
@@ -111,6 +112,7 @@ BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON
 -DHIVE_LINT_LEVEL=OFF"
 
 BUILD_TAG="hive:$BUILD_VERSION$MIRA_TAG"
+BUILD_TAG_ECLIPSE="hive:$BUILD_VERSION-eclipse$MIRA_TAG"
 BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc$MIRA_TAG"
 BUILD_TAG_RPCAH="hive:$BUILD_VERSION-rpcah$MIRA_TAG"
 BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet$MIRA_TAG"
@@ -131,7 +133,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build hive container (seed, witness, rpc or rpcah) from docker file (pass hive version as argument)"
+  echo "    build - build hive container (seed, witness, eclipse, rpc or rpcah) from docker file (pass hive version as argument)"
   echo "            to build with MIRA, add mira as last argument, e.g. ./run.sh build 0.23.0 mira"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
@@ -226,6 +228,11 @@ build() {
     echo $GREEN"Building image $BUILD_TAG"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
     BUILT_IMAGE=$BUILD_TAG
+  fi
+  if [[ $CONTAINER_TYPE == "eclipse" ]]; then
+    echo $GREEN"Building image $BUILD_TAG_ECLIPSE"$RESET
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_ECLIPSE --tag $BUILD_TAG_ECLIPSE .
+    BUILT_IMAGE=$BUILD_TAG_ECLIPSE
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
     echo $GREEN"Building image $BUILD_TAG_RPC"$RESET
