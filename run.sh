@@ -323,8 +323,8 @@ container_running() {
 start() {
   if [[ $1 == "force" ]]; then # $1 passed through the function
     FORCE_OPEN="--force-open"
+    echo $GREEN"Starting container with $FORCE_OPEN"$RESET
   fi
-  echo $GREEN"Starting container with $FORCE_OPEN"$RESET
   
   container_exists
   if [[ $? == 0 ]]; then
