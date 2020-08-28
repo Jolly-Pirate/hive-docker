@@ -50,4 +50,5 @@ EXPOSE 8090
 VOLUME /hive
 WORKDIR /hive
 
-CMD ["sh", "-c", "/usr/bin/hived"]
+# commented, passing hived from the run.sh anyways
+# CMD ["sh", "-c", "/usr/bin/hived"]

@@ -149,7 +149,7 @@ help() {
   echo "    snapshot <dump|load|pack|unpack> snapshot_name
               dump|load: stop the container, dump/load snapshot and resume hived
               pack: compress the snapshot with tar+gzip
-  unpack: decompress the snapshot (pass the snapshot filename without the .tgz extension)"
+              unpack: decompress the snapshot (pass the snapshot filename without the .tgz extension)"
   echo "    start - start hive container"
   echo "    status - show status of hive container"
   echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
