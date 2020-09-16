@@ -47,7 +47,8 @@ PORTS="2001"
 if [[ -f .env ]]; then
   source .env
 else
-  echo $RED"Missing .env file, please create one before proceeding."$RESET
+  echo $RED"Missing .env, copying example .env from template (seed). Edit it before running this again."$RESET
+  cp .env-example .env
   exit
 fi
 
