@@ -389,7 +389,8 @@ snapshot() {
           echo "Waiting for snapshot process to finish, you can ctrl-c this dialog and monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
           time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
           # Get the block height and append it to the snapshot name (remove ANSI codes with sed and trim the line returns to get only the block number)
-          blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
+          #blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
+          blockheight=$(cat data/state_snapshot_dump.json | jq ".measurements[].block_number") # less complicated
           today=$(date '+%Y%m%d')
           sudo mv "$DATADIR/witness_node_data_dir/snapshot/$2" "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight"
           echo $GREEN$"Snapshot block height  : $blockheight"$RESET
