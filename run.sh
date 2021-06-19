@@ -19,7 +19,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
 BUILD_VERSION="$2"
-MIRA="$3"
 
 # get the version only
 # https://stackoverflow.com/a/42681464/5369345
@@ -92,31 +91,23 @@ if [[ $1 == *"build"* ]]; then
     echo $RED"Specify the hived version to build, for example: ./run.sh build master"$RESET
     exit
   fi
-  if [[ $3 == "mira" ]]; then
-    MIRA="ON"
-    MIRA_TAG="-mira"
-  else
-    MIRA="OFF"
-    MIRA_TAG=""
-  fi
-  echo $RED"Building with MIRA=$MIRA"$RESET
 fi
 
-BUILD_SWITCHES_LOWMEM="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
-BUILD_SWITCHES_ECLIPSE="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPC="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
-BUILD_SWITCHES_RPCAH="-DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=OFF -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON"
-BUILD_SWITCHES_TESTNET="-DLOW_MEMORY_NODE=ON -DCLEAR_VOTES=ON -DSKIP_BY_TX_ID=ON -DENABLE_MIRA=$MIRA -DHIVE_STATIC_BUILD=ON \
+BUILD_SWITCHES_LOWMEM="-DSKIP_BY_TX_ID=ON -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_ECLIPSE="-DSKIP_BY_TX_ID=OFF -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPC="-DSKIP_BY_TX_ID=OFF -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_RPCAH="-DSKIP_BY_TX_ID=OFF -DHIVE_STATIC_BUILD=ON"
+BUILD_SWITCHES_TESTNET="-DSKIP_BY_TX_ID=ON -DHIVE_STATIC_BUILD=ON \
 -DBUILD_HIVE_TESTNET=ON \
 -DENABLE_SMT_SUPPORT=ON \
 -DCHAINBASE_CHECK_LOCKING=ON \
 -DHIVE_LINT_LEVEL=OFF"
 
-BUILD_TAG="hive:$BUILD_VERSION$MIRA_TAG"
-BUILD_TAG_ECLIPSE="hive:$BUILD_VERSION-eclipse$MIRA_TAG"
-BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc$MIRA_TAG"
-BUILD_TAG_RPCAH="hive:$BUILD_VERSION-rpcah$MIRA_TAG"
-BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet$MIRA_TAG"
+BUILD_TAG="hive:$BUILD_VERSION"
+BUILD_TAG_ECLIPSE="hive:$BUILD_VERSION-eclipse"
+BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc"
+BUILD_TAG_RPCAH="hive:$BUILD_VERSION-rpcah"
+BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet"
 
 IFS=","
 DPORTS=""
@@ -135,7 +126,6 @@ help() {
   echo
   echo "Commands: "
   echo "    build - build hive container (seed, witness, eclipse, rpc or rpcah) from docker file (pass hive version as argument)"
-  echo "            to build with MIRA, add mira as last argument, e.g. ./run.sh build 0.23.0 mira"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
