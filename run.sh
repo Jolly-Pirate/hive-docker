@@ -140,8 +140,10 @@ help() {
   echo "    snapshot <dump|load|pack|unpack> snapshot_name
               dump|load: stop the container, dump/load snapshot and resume hived
               pack: compress the snapshot with tar+gzip
-  unpack: decompress the snapshot (pass the snapshot filename without the .tgz extension)"
+              unpack: decompress the snapshot (pass the snapshot filename without the .tgz extension)"
   echo "    start - start hive container"
+  echo "    save - stop hive container and save /dev/shm/shared_memory.bin"
+  echo "    load - copy shared_memory.bin to /dev/shm/ and start hive container"
   echo "    status - show status of hive container"
   echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
   echo "    kill - force stop hive container"
@@ -438,6 +440,30 @@ enter() {
   docker exec -it $DOCKER_NAME bash
 }
 
+save() {
+  if [[ $SHM_DIR == "/dev/shm" ]]; then
+    availablespace=$(df -P . | awk 'END{print $4}')
+    filesize=$(du -k "$SHM_DIR/shared_memory.bin" | awk '{print $1}')
+    echo "Available space ${availablespace}kb"
+    echo "Shared memory size ${filesize}kb"
+    if (( filesize > availablespace )); then
+      echo "Not enough space to save"
+    else
+      stop
+      rm $(pwd)/shared_memory.bin
+      rsync -aAHXPh -v --stats /dev/shm/shared_memory.bin .
+    fi
+  else
+    echo "SHM_DIR ($SHM_DIR) is not in tmpfs"
+  fi
+}
+
+load() {
+  sudo rm /dev/shm/shared_memory.bin
+  rsync -aAHXPh -v --stats shared_memory.bin /dev/shm/
+  start
+}
+
 wallet() {
   docker exec -it $DOCKER_NAME cli_wallet
 }
@@ -509,6 +535,12 @@ case $1 in
   ;;
   snapshot)
     snapshot $2 $3
+  ;;
+  save)
+    save
+  ;;
+  load)
+    load
   ;;
   optimize)
     echo "Applying recommended dirty write settings..."
