@@ -371,7 +371,7 @@ snapshot() {
           # Get the block height and append it to the snapshot name (remove ANSI codes with sed and trim the line returns to get only the block number)
           #blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
           if [[ $1 == "dump" ]]; then
-            blockheight=$(cat data/state_snapshot_dump.json | jq ".measurements[].block_number") # less complicated
+            blockheight=$(cat data/state_snapshot_dump.json | jq ".total_measurement.block_number") # less complicated
             today=$(date '+%Y%m%d')
             sudo mv "$DATADIR/witness_node_data_dir/snapshot/$2" "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight"
             echo $GREEN$"Snapshot block height  : $blockheight"$RESET
