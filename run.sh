@@ -51,8 +51,8 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah|testnet) ]]; then
-  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, rpc or rpcah."$RESET
+if [[ $CONTAINER_TYPE != +(seed|witness|rpc|testnet) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness or rpc."$RESET
   exit
 fi
 
@@ -95,7 +95,6 @@ fi
 
 BUILD_SWITCHES_LOWMEM="-DSKIP_BY_TX_ID=ON"
 BUILD_SWITCHES_RPC="-DSKIP_BY_TX_ID=OFF"
-BUILD_SWITCHES_RPCAH="-DSKIP_BY_TX_ID=OFF"
 BUILD_SWITCHES_TESTNET="-DSKIP_BY_TX_ID=ON \
 -DBUILD_HIVE_TESTNET=ON \
 -DENABLE_SMT_SUPPORT=ON \
@@ -104,7 +103,6 @@ BUILD_SWITCHES_TESTNET="-DSKIP_BY_TX_ID=ON \
 
 BUILD_TAG="hive:$BUILD_VERSION"
 BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc"
-BUILD_TAG_RPCAH="hive:$BUILD_VERSION-rpcah"
 BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet"
 
 IFS=","
@@ -123,8 +121,8 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build hive container (seed, witness, rpc or rpcah) from docker file (pass hive version as argument)"
-  echo "    dlblocks - download and decompress the blockchain to speed up your first start"
+  echo "    build <version> - build hive container (seed, witness or rpc)"
+  echo "    dlblocks - download and decompress the blockchain file"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
   echo "    install_docker - install docker"
@@ -135,10 +133,10 @@ help() {
   echo "    replay - start hive container in replay mode"
   echo "    restart - restart hive container"
   echo "    shm_size - set /dev/shm to a given size, for example: ./run.sh shm_size 20G"
-  echo "    snapshot <dump|load|pack|unpack> snapshot_name
-              dump|load: stop the container, dump/load snapshot and resume hived
-              pack: compress the snapshot with tar+gzip
-              unpack: decompress the snapshot (pass the snapshot filename without the .tgz extension)"
+  echo "    snapshot <dump|load|pack|unpack> <snapshot_name>"
+  echo "              dump|load: stop the container, dump/load snapshot and resume hived"
+  echo "              pack: compress the snapshot with tar+gzip"
+  echo "              unpack: decompress the snapshot"
   echo "    start - start hive container"
   echo "    save - stop hive container and save /dev/shm/shared_memory.bin"
   echo "    load - copy shared_memory.bin to /dev/shm/ and start hive container"
@@ -226,11 +224,6 @@ build() {
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
     BUILT_IMAGE=$BUILD_TAG_RPC
   fi
-  if [[ $CONTAINER_TYPE == "rpcah" ]]; then
-    echo $GREEN"Building image $BUILD_TAG_RPCAH"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPCAH --tag $BUILD_TAG_RPCAH .
-    BUILT_IMAGE=$BUILD_TAG_RPCAH
-  fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
     echo $GREEN"Building image $BUILD_TAG_TESTNET"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
@@ -252,7 +245,7 @@ dlblocks() {
   xz -d $DATADIR/witness_node_data_dir/blockchain/block_log.xz -v
   echo "FINISHED. Blockchain downloaded and decompressed"
   echo "Remember to resize your /dev/shm, and run with replay!"
-  echo "$ ./run.sh shm_size SIZE (e.g. 8G)"
+  echo "$ ./run.sh shm_size SIZE (e.g. 20G)"
   echo "$ ./run.sh replay"
 }
 
@@ -336,7 +329,7 @@ replay() {
     echo $GREEN"Starting container with $FORCE_REPLAY"$RESET
   fi
   
-  if [[ $CONTAINER_TYPE == "rpc" || $CONTAINER_TYPE == "rpcah" ]]; then
+  if [[ $CONTAINER_TYPE == "rpc" ]]; then
     echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
     LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
     #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
@@ -430,6 +423,7 @@ kill() {
   time docker stop $DOCKER_NAME
   docker rm $DOCKER_NAME
 }
+
 enter() {
   docker exec -it $DOCKER_NAME bash
 }
