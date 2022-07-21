@@ -37,7 +37,7 @@ fi
 if [[ $val -lt 20011 && versionIsNum -eq 1 ]]; then
   BUILD_OS="ubuntu:xenial"
 else # handles master, stable too
-  BUILD_OS="ubuntu:bionic"
+  BUILD_OS="phusion/baseimage:focal-1.2.0" # don't use ubuntu:bionic or focal on hf26 develop, gives a: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
 fi
 
 # default. override in .env
@@ -51,8 +51,8 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(seed|witness|eclipse|rpc|rpcah|testnet) ]]; then
-  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, eclipse, rpc or rpcah."$RESET
+if [[ $CONTAINER_TYPE != +(seed|witness|rpc|rpcah|testnet) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, rpc or rpcah."$RESET
   exit
 fi
 
@@ -94,7 +94,6 @@ if [[ $1 == *"build"* ]]; then
 fi
 
 BUILD_SWITCHES_LOWMEM="-DSKIP_BY_TX_ID=ON -DHIVE_STATIC_BUILD=ON"
-BUILD_SWITCHES_ECLIPSE="-DSKIP_BY_TX_ID=OFF -DHIVE_STATIC_BUILD=ON"
 BUILD_SWITCHES_RPC="-DSKIP_BY_TX_ID=OFF -DHIVE_STATIC_BUILD=ON"
 BUILD_SWITCHES_RPCAH="-DSKIP_BY_TX_ID=OFF -DHIVE_STATIC_BUILD=ON"
 BUILD_SWITCHES_TESTNET="-DSKIP_BY_TX_ID=ON -DHIVE_STATIC_BUILD=ON \
@@ -104,7 +103,6 @@ BUILD_SWITCHES_TESTNET="-DSKIP_BY_TX_ID=ON -DHIVE_STATIC_BUILD=ON \
 -DHIVE_LINT_LEVEL=OFF"
 
 BUILD_TAG="hive:$BUILD_VERSION"
-BUILD_TAG_ECLIPSE="hive:$BUILD_VERSION-eclipse"
 BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc"
 BUILD_TAG_RPCAH="hive:$BUILD_VERSION-rpcah"
 BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet"
@@ -125,7 +123,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build - build hive container (seed, witness, eclipse, rpc or rpcah) from docker file (pass hive version as argument)"
+  echo "    build - build hive container (seed, witness, rpc or rpcah) from docker file (pass hive version as argument)"
   echo "    dlblocks - download and decompress the blockchain to speed up your first start"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
@@ -144,6 +142,7 @@ help() {
   echo "    start - start hive container"
   echo "    save - stop hive container and save /dev/shm/shared_memory.bin"
   echo "    load - copy shared_memory.bin to /dev/shm/ and start hive container"
+  echo "    compress - compress the block_log (HF26 feature)"
   echo "    status - show status of hive container"
   echo "    stop - stop hive container (wait up to 300s for it to shutdown cleanly)"
   echo "    kill - force stop hive container"
@@ -221,11 +220,6 @@ build() {
     echo $GREEN"Building image $BUILD_TAG"$RESET
     docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
     BUILT_IMAGE=$BUILD_TAG
-  fi
-  if [[ $CONTAINER_TYPE == "eclipse" ]]; then
-    echo $GREEN"Building image $BUILD_TAG_ECLIPSE"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_ECLIPSE --tag $BUILD_TAG_ECLIPSE .
-    BUILT_IMAGE=$BUILD_TAG_ECLIPSE
   fi
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
     echo $GREEN"Building image $BUILD_TAG_RPC"$RESET
@@ -464,6 +458,13 @@ load() {
   start
 }
 
+compress(){
+  stop
+  mkdir -p $DATADIR/witness_node_data_dir/blockchain/compressed
+  docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION compress_block_log -j`expr $(nproc) - 2` --benchmark-decompression -i /hive/witness_node_data_dir/blockchain -o /hive/witness_node_data_dir/blockchain/compressed
+  logs
+}
+
 wallet() {
   docker exec -it $DOCKER_NAME cli_wallet
 }
@@ -541,6 +542,9 @@ case $1 in
   ;;
   load)
     load
+  ;;
+  compress)
+    compress
   ;;
   optimize)
     echo "Applying recommended dirty write settings..."

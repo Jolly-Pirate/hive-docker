@@ -4,6 +4,7 @@
 **/*.tgz
 **/backup
 **/block_log*
+**/compressed
 **/config.ini
 **/core
 **/database.cfg
