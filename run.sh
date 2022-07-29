@@ -20,26 +20,6 @@ DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
 BUILD_VERSION="$2"
 
-# get the version only
-# https://stackoverflow.com/a/42681464/5369345
-function versionToInt() {
-  local IFS=.
-  parts=($1)
-  let val=1000000*parts[0]+1000*parts[1]+parts[2]
-  echo $val
-}
-VER="$( echo ${BUILD_VERSION#"v"} )"
-# only numbers in version
-if [[ $VER =~ ^[0-9.]+$ ]]; then
-  versionIsNum=1
-  versionToInt $VER
-fi
-if [[ $val -lt 20011 && versionIsNum -eq 1 ]]; then
-  BUILD_OS="ubuntu:xenial"
-else # handles master, stable too
-  BUILD_OS="phusion/baseimage:focal-1.2.0" # don't use ubuntu:bionic or focal on hf26 develop, gives a: warning: jobserver unavailable: using -j1.  Add '+' to parent make rule.
-fi
-
 # default. override in .env
 PORTS="2001"
 
@@ -73,6 +53,11 @@ fi
 
 if [[ ! $SHM_DIR ]]; then
   echo $RED"SHM_DIR not defined in the .env file"$RESET
+  exit
+fi
+
+if [[ ! $BUILD_OS ]]; then
+  echo $RED"BUILD_OS not defined in the .env file"$RESET
   exit
 fi
 
@@ -174,7 +159,7 @@ optimize() {
 
 version() {
   if docker ps | grep -wq $DOCKER_NAME; then
-    echo "hived -v" | docker exec -i $DOCKER_NAME bash
+    docker exec $DOCKER_NAME bash -c "echo ${BOLD}${BLUE}linux version${RESET} ; cat /etc/*release ; echo ${BOLD}${BLUE}hived version${RESET}; hived -v"
   else
     echo "Container not running"
   fi
