@@ -352,7 +352,7 @@ snapshot() {
         if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
           echo $GREEN"Container $DOCKER_NAME successfully started"
           echo "Waiting for snapshot process to finish, you can ctrl-c this dialog and monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
-          time until docker logs $DOCKER_NAME --tail=1 | grep -q "transactions on block" ; do sleep 1 ; done # wait for hived to synch
+          until docker logs $DOCKER_NAME --tail=100 | grep --color=always -i "State snapshot.*(real)" ; do sleep 1 ; done # wait for snapshot to finish
           # Get the block height and append it to the snapshot name (remove ANSI codes with sed and trim the line returns to get only the block number)
           #blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
           if [[ $1 == "dump" ]]; then
