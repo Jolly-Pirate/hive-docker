@@ -14,4 +14,8 @@ echo -e "\033[1mApplying custom patches\033[0m"
 # fix Websocket Timer Expired, just in case. https://github.com/steemit/steem/issues/35
 sed -i libraries/fc/vendor/websocketpp/websocketpp/transport/asio/endpoint.hpp -e 's/m_listen_backlog(0)/m_listen_backlog(lib::asio::socket_base::max_connections)/g' && \
 # curl https://github.com/steemit/steem/commit/53392cc31f011f9a8def8dfffff78dbab17ebf2e.patch  | git apply # already applied in 0.22.2
+
+# disable logging not_enough_rc_exception to the console
+git cherry-pick d40879068a357ffd789b8743122801341de36b3a
+
 sleep 5
