@@ -220,15 +220,28 @@ build() {
 }
 
 dlblocks() {
-  mkdir -p "$DATADIR/blockchain"
-  echo "Removing old block log"
-  sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log
-  sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log.index
-  echo "Download @gtg's block logs..."
-  wget https://gtg.hive.house/get/blockchain.xz/block_log.xz -O $DATADIR/witness_node_data_dir/blockchain/block_log.xz
-  echo "Decompressing block log... this may take a while..."
-  xz -d $DATADIR/witness_node_data_dir/blockchain/block_log.xz -v
-  echo "FINISHED. Blockchain downloaded and decompressed"
+  mkdir -p "$DATADIR/witness_node_data_dir/blockchain"
+  # Prompt to remove old block log
+  read -e -p "Remove old block log? [Y/n] " YN
+  [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
+  (
+    echo "Removing old block log"
+    sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
+  )
+  read -e -p "Get compressed (c) or uncompressed (u) block_log? [C/u] " CU
+  [[ $CU == "c" || $CU == "C" || $CU == "" ]] &&
+  (
+    echo "Downloading compressed block_log..."
+    wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
+    wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log.artifacts -O $DATADIR/witness_node_data_dir/blockchain/block_log.artifacts
+  )
+  [[ $CU == "u" || $CU == "U" ]] &&
+  (
+    echo "Downloading uncompressed block_log..."
+    wget -c https://gtg.openhive.network/get/blockchain/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
+    wget -c https://gtg.openhive.network/get/blockchain/block_log.index -O $DATADIR/witness_node_data_dir/blockchain/block_log.index
+  )
+  echo "FINISHED. Blockchain downloaded"
   echo "Remember to resize your /dev/shm, and run with replay!"
   echo "$ ./run.sh shm_size SIZE (e.g. 20G)"
   echo "$ ./run.sh replay"
