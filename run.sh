@@ -304,10 +304,44 @@ start() {
     echo $GREEN"Starting container with $FORCE_OPEN"$RESET
   fi
   
+  # Synching from scratch
+  if [[ ! -f "$DATADIR/witness_node_data_dir/blockchain/block_log" ]]; then
+    RESYNCHING="true"
+    CHECKPOINT='checkpoint = [68500000, "04153a20e4c2adff08d2fc7566fd26d7a28fd564"]'
+cat <<EOF
+${BOLD}block_log doesn't exist, will synch the blockchain from scratch with
+a checkpoint, and temporarly disable the witness line in the config.ini
+to speed up the synchronization${RESET}
+EOF
+    read -e -p $RED$BOLD"Proceed with those modifications? [Y/n] "$RESET YN
+    [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
+    (
+      if ! grep -q -e '^checkpoint.*04153a20e4c2adff08d2fc7566fd26d7a28fd564' $DATADIR/witness_node_data_dir/config.ini; then
+        echo $CHECKPOINT >> $DATADIR/witness_node_data_dir/config.ini
+        echo Added to config.ini: $CHECKPOINT
+      fi
+      
+      if [[ $CONTAINER_TYPE == "witness" ]]; then
+        sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^witness/# witness/g'
+cat <<EOF
+${BLUE}${BOLD}IMPORTANT NOTE
+Do a './run.sh restart' when the synchronization is complete
+to re-enable the witness${RESET}"
+EOF
+        read -e -p "<press any key to continue>"
+      fi
+    )
+  fi
+  
   container_exists
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
   else
+    # Re-enable the witness setting
+    if [[ $CONTAINER_TYPE == "witness" ]] && [[ $RESYNCHING != "true" ]] && grep -q -e '# witness.*=.*' $DATADIR/witness_node_data_dir/config.ini; then
+      echo "Re-enabling the witness line in the config.ini"
+      sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^# witness/witness/g'
+    fi
     docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
   fi
   
