@@ -19,6 +19,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
 BUILD_VERSION="$2"
+REMOTE_WS="wss://api.deathwing.me"
 
 # default. override in .env
 PORTS="2001"
@@ -495,8 +496,20 @@ wallet() {
   docker exec -it $DOCKER_NAME cli_wallet
 }
 
+# Usage: ./run.sh remote_wallet [wss_server]
+# Connects to a remote websocket server for wallet connection. This is completely safe
+# as your wallet/private keys are never sent to the remote server.
+#
+# By default, it will connect to wss://api.deathwing.me:443 (ws = normal websockets, wss = secure HTTPS websockets)
+# See this link for a list of WSS nodes: https://www.HIVE.center/index.php?title=Public_Websocket_Servers
+# 
+#    wss_server - a custom websocket server to connect to, e.g. ./run.sh remote_wallet wss://rpc.HIVEviz.com
+#
 remote_wallet() {
-  docker run -v "$DATADIR":/hive --rm -it hive cli_wallet -s wss://hived.privex.io
+    if (( $# >= 1 )); then
+        REMOTE_WS="$1"
+    fi
+    docker run -v "$DATADIR":/hive --rm -it --name remote_wallet hive:$TAG_VERSION cli_wallet -s "$REMOTE_WS"
 }
 
 logs() {
@@ -583,7 +596,7 @@ case $1 in
     wallet
   ;;
   remote_wallet)
-    remote_wallet
+    remote_wallet $2
   ;;
   dlblocks)
     dlblocks
