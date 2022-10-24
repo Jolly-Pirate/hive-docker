@@ -32,19 +32,19 @@ else
   exit
 fi
 
-if [[ $CONTAINER_TYPE != +(seed|witness|rpc|testnet) ]]; then
-  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness or rpc."$RESET
+if [[ $CONTAINER_TYPE != +(seed|witness|rpc|fakenet|testnet) ]]; then
+  echo $RED"CONTAINER_TYPE not defined in the .env file. Set it to seed, witness, rpc, fakenet or testnet."$RESET
   exit
 fi
 
-if [[ $CONTAINER_TYPE == "testnet" && ! $CHAIN_ID ]]; then
-  echo $RED"Missing CHAIN_ID in .env for the testnet"$RESET
+if [[ $CONTAINER_TYPE == +(fakenet|testnet) && ! $CHAIN_ID ]]; then
+  echo $RED"Missing CHAIN_ID in .env for the fakenet or testnet"$RESET
   exit
 fi
 
-if [[ $CONTAINER_TYPE == "testnet" && $CHAIN_ID ]]; then
-  CHAIN_ID_PARAM="--chain-id="$CHAIN_ID
-  echo "Starting a testnet with "$CHAIN_ID_PARAM
+if [[ $CONTAINER_TYPE == +(fakenet|testnet) && $CHAIN_ID ]]; then
+  CHAIN_ID_PARAM="--chain-id=$CHAIN_ID"
+  echo "Starting a $CONTAINER_TYPE with $CHAIN_ID_PARAM"
 fi
 
 if [[ ! $DOCKER_NAME ]]; then
@@ -79,16 +79,13 @@ if [[ $1 == *"build"* ]]; then
   fi
 fi
 
-BUILD_SWITCHES_LOWMEM="-DSKIP_BY_TX_ID=ON"
-BUILD_SWITCHES_RPC="-DSKIP_BY_TX_ID=OFF"
-BUILD_SWITCHES_TESTNET="-DSKIP_BY_TX_ID=ON \
--DBUILD_HIVE_TESTNET=ON \
--DENABLE_SMT_SUPPORT=ON \
+BUILD_SWITCHES_FAKENET="-DHIVE_CONVERTER_BUILD=ON"
+BUILD_SWITCHES_TESTNET="-DBUILD_HIVE_TESTNET=ON \
 -DCHAINBASE_CHECK_LOCKING=ON \
 -DHIVE_LINT_LEVEL=OFF"
 
 BUILD_TAG="hive:$BUILD_VERSION"
-BUILD_TAG_RPC="hive:$BUILD_VERSION-rpc"
+BUILD_TAG_FAKENET="hive:$BUILD_VERSION-fakenet"
 BUILD_TAG_TESTNET="hive:$BUILD_VERSION-testnet"
 
 IFS=","
@@ -107,7 +104,7 @@ help() {
   echo "Usage: $0 COMMAND [DATA]"
   echo
   echo "Commands: "
-  echo "    build <version> - build hive container (seed, witness or rpc)"
+  echo "    build <version> - build hive container (seed, witness, rpc, fakenet, testnet)"
   echo "    dlblocks - download and decompress the blockchain file"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
@@ -197,18 +194,18 @@ build() {
   if [[ $REPO_SOURCE ]]; then
     echo $RED"Custom Github repo: $REPO_SOURCE"$RESET
   else
-    REPO_SOURCE="https://github.com/hiveit/hive.git"
+    REPO_SOURCE="https://github.com/openhive-network/hive"
     echo $RED"Default Github repo: $REPO_SOURCE"$RESET
   fi
-  if [[ $CONTAINER_TYPE == "seed" || $CONTAINER_TYPE == "witness" ]]; then
+  if [[ $CONTAINER_TYPE == +(seed|witness|rpc) ]]; then
     echo $GREEN"Building image $BUILD_TAG"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_LOWMEM --tag $BUILD_TAG .
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --tag $BUILD_TAG .
     BUILT_IMAGE=$BUILD_TAG
   fi
-  if [[ $CONTAINER_TYPE == "rpc" ]]; then
-    echo $GREEN"Building image $BUILD_TAG_RPC"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_RPC --tag $BUILD_TAG_RPC .
-    BUILT_IMAGE=$BUILD_TAG_RPC
+  if [[ $CONTAINER_TYPE == "fakenet" ]]; then
+    echo $GREEN"Building image $BUILD_TAG_FAKENET"$RESET
+    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_FAKENET --tag $BUILD_TAG_FAKENET .
+    BUILT_IMAGE=$BUILD_TAG_FAKENET
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
     echo $GREEN"Building image $BUILD_TAG_TESTNET"$RESET
@@ -260,7 +257,7 @@ install_docker() {
 
 install() {
   if [[ $BUILD_VERSION == "" ]]; then
-    echo $RED"Specify the hived version to install, for example: ./run.sh install v0.20.12"$RESET
+    echo $RED"Specify the prebuilt hived docker image to install, for example: ./run.sh install v1.27.0"$RESET
     exit
   fi
   echo "Loading image from jollypirate/hive:$BUILD_VERSION"
@@ -357,7 +354,7 @@ EOF
 replay() {
   stop
 
-  if [[ $1 == "force" ]]; then # eclipse will try to resume replay, force it to replay from scratch
+  if [[ $1 == "force" ]]; then
     FORCE_REPLAY="--force-replay"
     echo $GREEN"Starting container with $FORCE_REPLAY"$RESET
   fi
@@ -373,7 +370,6 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    #docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive hived --data-dir=/hive/witness_node_data_dir --replay $RPC_FEEDS $RPC_TAGS
     docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000 $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
@@ -462,7 +458,7 @@ enter() {
 }
 
 save() {
-  if [[ $SHM_DIR == "/dev/shm" ]]; then
+  if [[ $SHM_DIR =~ "/dev/shm" ]]; then
     availablespace=$(df -P . | awk 'END{print $4}')
     filesize=$(du -k "$SHM_DIR/shared_memory.bin" | awk '{print $1}')
     echo "Available space ${availablespace}kb"
