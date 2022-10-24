@@ -15,7 +15,7 @@ CYAN="$(tput setaf 6)"
 WHITE="$(tput setaf 7)"
 RESET="$(tput sgr0)"
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
 BUILD_VERSION="$2"
@@ -142,15 +142,15 @@ optimize() {
   #echo    80 | sudo tee /proc/sys/vm/dirty_ratio
   #echo 30000 | sudo tee /proc/sys/vm/dirty_writeback_centisecs
   echo $GREEN'Clearing caches. Current setting:' $(cat /proc/sys/vm/drop_caches)$RESET
-  echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
-  
+  echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
+
   echo $GREEN'Configuring swappiness. Current setting:' $(cat /proc/sys/vm/swappiness)$RESET
   #swappiness
   sudo sysctl vm.swappiness=10
   #set swappiness on boot
   if ! grep -q -e '^vm.swappiness' /etc/sysctl.conf; then
     sudo cp -rpn /etc/sysctl.conf /etc/sysctl.bak
-    echo 'vm.swappiness = 10' | sudo tee -a /etc/sysctl.conf > /dev/null # -a append
+    echo 'vm.swappiness = 10' | sudo tee -a /etc/sysctl.conf >/dev/null # -a append
     grep -e '^vm.swappiness' /etc/sysctl.conf
   else
     sudo sed -i /etc/sysctl.conf -r -e 's/^vm.swappiness.*=.*/vm.swappiness = 10/g'
@@ -181,8 +181,8 @@ preinstall() {
 
 install_ntp() {
   sudo apt install -y ntp
-  if ! grep -q "minpoll 5" /etc/ntp.conf; then echo "minpoll 5" | sudo tee -a /etc/ntp.conf > /dev/null; fi
-  if ! grep -q "maxpoll 7" /etc/ntp.conf; then echo "maxpoll 7" | sudo tee -a /etc/ntp.conf > /dev/null; fi
+  if ! grep -q "minpoll 5" /etc/ntp.conf; then echo "minpoll 5" | sudo tee -a /etc/ntp.conf >/dev/null; fi
+  if ! grep -q "maxpoll 7" /etc/ntp.conf; then echo "maxpoll 7" | sudo tee -a /etc/ntp.conf >/dev/null; fi
   sudo systemctl enable ntp
   sudo systemctl restart ntp
   echo
@@ -217,7 +217,7 @@ build() {
   fi
   echo $GREEN"Docker image built $BUILT_IMAGE"$RESET
   echo $GREEN"Removing remnant docker images"$RESET
-  docker images | if grep -q '<none>' ; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f ; fi
+  docker images | if grep -q '<none>'; then docker images | grep '<none>' | awk '{print $3}' | xargs docker rmi -f; fi
 }
 
 dlblocks() {
@@ -225,23 +225,23 @@ dlblocks() {
   # Prompt to remove old block log
   read -e -p "Remove old block log? [Y/n] " YN
   [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
-  (
-    echo "Removing old block log"
-    sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
-  )
+    (
+      echo "Removing old block log"
+      sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
+    )
   read -e -p "Get compressed (c) or uncompressed (u) block_log? [C/u] " CU
   [[ $CU == "c" || $CU == "C" || $CU == "" ]] &&
-  (
-    echo "Downloading compressed block_log..."
-    wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
-    wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log.artifacts -O $DATADIR/witness_node_data_dir/blockchain/block_log.artifacts
-  )
+    (
+      echo "Downloading compressed block_log..."
+      wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
+      wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log.artifacts -O $DATADIR/witness_node_data_dir/blockchain/block_log.artifacts
+    )
   [[ $CU == "u" || $CU == "U" ]] &&
-  (
-    echo "Downloading uncompressed block_log..."
-    wget -c https://gtg.openhive.network/get/blockchain/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
-    wget -c https://gtg.openhive.network/get/blockchain/block_log.index -O $DATADIR/witness_node_data_dir/blockchain/block_log.index
-  )
+    (
+      echo "Downloading uncompressed block_log..."
+      wget -c https://gtg.openhive.network/get/blockchain/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
+      wget -c https://gtg.openhive.network/get/blockchain/block_log.index -O $DATADIR/witness_node_data_dir/blockchain/block_log.index
+    )
   echo "FINISHED. Blockchain downloaded"
   echo "Remember to resize your /dev/shm, and run with replay!"
   echo "$ ./run.sh shm_size SIZE (e.g. 20G)"
@@ -270,9 +270,9 @@ install() {
     # Prompt to update .env
     read -e -p "Add/Update TAG_VERSION to the .env file? [Y/n] " YN
     [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
-    if ! grep -q TAG_VERSION .env; then echo TAG_VERSION >> .env; fi &&
-    sed -i .env -r -e  "s/^TAG_VERSION.*/TAG_VERSION=$BUILD_VERSION/g"
-    
+      if ! grep -q TAG_VERSION .env; then echo TAG_VERSION >>.env; fi &&
+      sed -i .env -r -e "s/^TAG_VERSION.*/TAG_VERSION=$BUILD_VERSION/g"
+
     echo "Installation completed. You may now configure or run the server."
   fi
 }
@@ -304,36 +304,36 @@ start() {
     FORCE_OPEN="--force-open"
     echo $GREEN"Starting container with $FORCE_OPEN"$RESET
   fi
-  
+
   # Synching from scratch
   if [[ ! -f "$DATADIR/witness_node_data_dir/blockchain/block_log" ]]; then
     RESYNCHING="true"
     CHECKPOINT='checkpoint = [68500000, "04153a20e4c2adff08d2fc7566fd26d7a28fd564"]'
-cat <<EOF
+    cat <<EOF
 ${BOLD}block_log doesn't exist, will synch the blockchain from scratch with
 a checkpoint, and temporarly disable the witness line in the config.ini
 to speed up the synchronization${RESET}
 EOF
     read -e -p $RED$BOLD"Proceed with those modifications? [Y/n] "$RESET YN
     [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
-    (
-      if ! grep -q -e '^checkpoint.*04153a20e4c2adff08d2fc7566fd26d7a28fd564' $DATADIR/witness_node_data_dir/config.ini; then
-        echo $CHECKPOINT >> $DATADIR/witness_node_data_dir/config.ini
-        echo Added to config.ini: $CHECKPOINT
-      fi
-      
-      if [[ $CONTAINER_TYPE == "witness" ]]; then
-        sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^witness/# witness/g'
-cat <<EOF
+      (
+        if ! grep -q -e '^checkpoint.*04153a20e4c2adff08d2fc7566fd26d7a28fd564' $DATADIR/witness_node_data_dir/config.ini; then
+          echo $CHECKPOINT >>$DATADIR/witness_node_data_dir/config.ini
+          echo Added to config.ini: $CHECKPOINT
+        fi
+
+        if [[ $CONTAINER_TYPE == "witness" ]]; then
+          sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^witness/# witness/g'
+          cat <<EOF
 ${BLUE}${BOLD}IMPORTANT NOTE
 Do a './run.sh restart' when the synchronization is complete
 to re-enable the witness${RESET}"
 EOF
-        read -e -p "<press any key to continue>"
-      fi
-    )
+          read -e -p "<press any key to continue>"
+        fi
+      )
   fi
-  
+
   container_exists
   if [[ $? == 0 ]]; then
     docker start $DOCKER_NAME
@@ -345,7 +345,7 @@ EOF
     fi
     docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
   fi
-  
+
   sleep 1
   if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
     echo $GREEN"Container $DOCKER_NAME successfully started"$RESET
@@ -356,18 +356,18 @@ EOF
 
 replay() {
   stop
-  
+
   if [[ $1 == "force" ]]; then # eclipse will try to resume replay, force it to replay from scratch
     FORCE_REPLAY="--force-replay"
     echo $GREEN"Starting container with $FORCE_REPLAY"$RESET
   fi
-  
+
   if [[ $CONTAINER_TYPE == "rpc" ]]; then
     echo "Replaying optimized RPC node (skipping feeds older than 7 days)"
     LAST_WEEK_UTC_DATE=$(date -d "-7 days" +%s)
     #NOTE --tags-start-promoted only if the tag plugin is loaded. e.g. remove it for a AH node
     RPC_FEEDS="--follow-start-feeds=$LAST_WEEK_UTC_DATE"
-    if grep -q data/witness_node_data_dir/config.ini -e '^plugin.*tags.*' ; then
+    if grep -q data/witness_node_data_dir/config.ini -e '^plugin.*tags.*'; then
       RPC_TAGS="--tags-start-promoted=$LAST_WEEK_UTC_DATE"
     else
       RPC_TAGS=""
@@ -379,7 +379,7 @@ replay() {
     echo "Replaying $CONTAINER_TYPE node..."
     docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000
   fi
-  
+
   sleep 1
   if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
     echo $GREEN"Container $DOCKER_NAME successfully started"$RESET
@@ -392,40 +392,40 @@ snapshot() {
   if [[ "$1" && "$2" ]]; then # $1 and $2 passed through the function
     curdir=$(pwd)
     case $1 in
-      dump|load)
-        stop
-        docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
-        #logs # monitor the snapshot
-        sleep 1
-        if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
-          echo $GREEN"Container $DOCKER_NAME successfully started"
-          echo "Waiting for snapshot process to finish, you can ctrl-c this dialog and monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
-          until docker logs $DOCKER_NAME --tail=100 | grep --color=always -i "State snapshot.*(real)" ; do sleep 1 ; done # wait for snapshot to finish
-          # Get the block height and append it to the snapshot name (remove ANSI codes with sed and trim the line returns to get only the block number)
-          #blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
-          if [[ $1 == "dump" ]]; then
-            blockheight=$(cat data/state_snapshot_dump.json | jq ".total_measurement.block_number") # less complicated
-            today=$(date '+%Y%m%d')
-            sudo mv "$DATADIR/witness_node_data_dir/snapshot/$2" "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight"
-            echo $GREEN$"Snapshot block height  : $blockheight"$RESET
-            echo $GREEN$"Snapshot size/location :" $(du -hs "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight")$RESET # get the size
-          fi
-        else
-          echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+    dump | load)
+      stop
+      docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
+      #logs # monitor the snapshot
+      sleep 1
+      if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
+        echo $GREEN"Container $DOCKER_NAME successfully started"
+        echo "Waiting for snapshot process to finish, you can ctrl-c this dialog and monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
+        until docker logs $DOCKER_NAME --tail=100 | grep --color=always -i "State snapshot.*(real)"; do sleep 1; done # wait for snapshot to finish
+        # Get the block height and append it to the snapshot name (remove ANSI codes with sed and trim the line returns to get only the block number)
+        #blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
+        if [[ $1 == "dump" ]]; then
+          blockheight=$(cat data/state_snapshot_dump.json | jq ".total_measurement.block_number") # less complicated
+          today=$(date '+%Y%m%d')
+          sudo mv "$DATADIR/witness_node_data_dir/snapshot/$2" "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight"
+          echo $GREEN$"Snapshot block height  : $blockheight"$RESET
+          echo $GREEN$"Snapshot size/location :" $(du -hs "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight")$RESET # get the size
         fi
+      else
+        echo $RED"Container $DOCKER_NAME didn't start!"$RESET
+      fi
       ;;
-      pack)
-        if [[ -d "data/witness_node_data_dir/snapshot/$2" ]]; then
-          echo $GREEN$"Packing snapshot '$2' to current folder"$RESET # get the size
-          cd "data/witness_node_data_dir/snapshot"
-          sudo tar czvf "$curdir/$2.tgz" "$2"
-        else
-          echo $RED"Snapshot $2 folder missing"$RESET
-        fi
+    pack)
+      if [[ -d "data/witness_node_data_dir/snapshot/$2" ]]; then
+        echo $GREEN$"Packing snapshot '$2' to current folder"$RESET # get the size
+        cd "data/witness_node_data_dir/snapshot"
+        sudo tar czvf "$curdir/$2.tgz" "$2"
+      else
+        echo $RED"Snapshot $2 folder missing"$RESET
+      fi
       ;;
-      unpack)
-        mkdir -p data/witness_node_data_dir/snapshot # create the folder if doesn't exist
-        sudo tar xzvf "$curdir/$2.tgz" -C "data/witness_node_data_dir/snapshot/"
+    unpack)
+      mkdir -p data/witness_node_data_dir/snapshot # create the folder if doesn't exist
+      sudo tar xzvf "$curdir/$2.tgz" -C "data/witness_node_data_dir/snapshot/"
       ;;
     esac
   else
@@ -467,7 +467,7 @@ save() {
     filesize=$(du -k "$SHM_DIR/shared_memory.bin" | awk '{print $1}')
     echo "Available space ${availablespace}kb"
     echo "Shared memory size ${filesize}kb"
-    if (( filesize > availablespace )); then
+    if ((filesize > availablespace)); then
       echo "Not enough space to save"
     else
       stop
@@ -485,10 +485,10 @@ load() {
   start
 }
 
-compress(){
+compress() {
   stop
   mkdir -p $DATADIR/witness_node_data_dir/blockchain/compressed
-  docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION compress_block_log -j`expr $(nproc) - 2` --benchmark-decompression -i /hive/witness_node_data_dir/blockchain -o /hive/witness_node_data_dir/blockchain/compressed
+  docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION compress_block_log -j$(expr $(nproc) - 2) --benchmark-decompression -i /hive/witness_node_data_dir/blockchain -o /hive/witness_node_data_dir/blockchain/compressed
   logs
 }
 
@@ -502,14 +502,14 @@ wallet() {
 #
 # By default, it will connect to wss://api.deathwing.me:443 (ws = normal websockets, wss = secure HTTPS websockets)
 # See this link for a list of WSS nodes: https://www.HIVE.center/index.php?title=Public_Websocket_Servers
-# 
+#
 #    wss_server - a custom websocket server to connect to, e.g. ./run.sh remote_wallet wss://rpc.HIVEviz.com
 #
 remote_wallet() {
-    if (( $# >= 1 )); then
-        REMOTE_WS="$1"
-    fi
-    docker run -v "$DATADIR":/hive --rm -it --name remote_wallet hive:$TAG_VERSION cli_wallet -s "$REMOTE_WS"
+  if (($# >= 1)); then
+    REMOTE_WS="$1"
+  fi
+  docker run -v "$DATADIR":/hive --rm -it --name remote_wallet hive:$TAG_VERSION cli_wallet -s "$REMOTE_WS"
 }
 
 logs() {
@@ -528,7 +528,7 @@ status() {
     echo "Container doesn't exist, thus it is NOT running. Run $0 build && $0 start"$RESET
     return
   fi
-  
+
   container_running
   if [[ $? == 0 ]]; then
     echo "Container running?: "$GREEN"YES"$RESET
@@ -544,83 +544,83 @@ if [ "$#" -lt 1 ]; then
 fi
 
 case $1 in
-  build)
-    echo "You may want to use '$0 install' for a binary image instead, it's faster."
-    build
+build)
+  echo "You may want to use '$0 install' for a binary image instead, it's faster."
+  build
   ;;
-  install_docker)
-    install_docker
+install_docker)
+  install_docker
   ;;
-  install)
-    install
+install)
+  install
   ;;
-  start)
-    start $2
+start)
+  start $2
   ;;
-  replay)
-    replay $2
+replay)
+  replay $2
   ;;
-  shm_size)
-    shm_size $2
+shm_size)
+  shm_size $2
   ;;
-  stop)
-    stop
+stop)
+  stop
   ;;
-  kill)
-    kill
+kill)
+  kill
   ;;
-  restart)
-    stop
-    start
+restart)
+  stop
+  start
   ;;
-  snapshot)
-    snapshot $2 $3
+snapshot)
+  snapshot $2 $3
   ;;
-  save)
-    save
+save)
+  save
   ;;
-  load)
-    load
+load)
+  load
   ;;
-  compress)
-    compress
+compress)
+  compress
   ;;
-  optimize)
-    echo "Applying recommended dirty write settings..."
-    optimize
+optimize)
+  echo "Applying recommended dirty write settings..."
+  optimize
   ;;
-  status)
-    status
+status)
+  status
   ;;
-  wallet)
-    wallet
+wallet)
+  wallet
   ;;
-  remote_wallet)
-    remote_wallet $2
+remote_wallet)
+  remote_wallet $2
   ;;
-  dlblocks)
-    dlblocks
+dlblocks)
+  dlblocks
   ;;
-  enter)
-    enter
+enter)
+  enter
   ;;
-  logs)
-    logs
+logs)
+  logs
   ;;
-  version)
-    version
+version)
+  version
   ;;
-  netstat)
-    netstat
+netstat)
+  netstat
   ;;
-  preinstall)
-    preinstall
+preinstall)
+  preinstall
   ;;
-  install_ntp)
-    install_ntp
+install_ntp)
+  install_ntp
   ;;
-  *)
-    echo "Invalid cmd"
-    help
+*)
+  echo "Invalid cmd"
+  help
   ;;
 esac

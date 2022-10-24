@@ -13,13 +13,13 @@ ENV LANG=en_US.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN echo "\033[1mInstalling packages (ctrl-c to cancel)\033[0m" && \
-    echo "Building $BUILD_VERSION image in $BUILD_OS from $REPO_SOURCE" && \
+	echo "Building $BUILD_VERSION image in $BUILD_OS from $REPO_SOURCE" && \
 	sleep 5 && \
 	apt-get update && \
 	apt-get install -y curl nano net-tools wget jq tzdata \
-    autoconf automake autotools-dev bsdmainutils build-essential cmake doxygen gdb git libboost-all-dev libyajl-dev \
-    libreadline-dev libssl-dev libtool liblz4-tool ncurses-dev pkg-config python3 python3-dev python3-jinja2 python3-pip virtualenv \
-    libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev ninja-build && \
+	autoconf automake autotools-dev bsdmainutils build-essential cmake doxygen gdb git libboost-all-dev libyajl-dev \
+	libreadline-dev libssl-dev libtool liblz4-tool ncurses-dev pkg-config python3 python3-dev python3-jinja2 python3-pip virtualenv \
+	libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev ninja-build && \
 	apt-get clean -qy
 
 RUN echo "\033[1mBuilding hived version: ${BUILD_VERSION} with ${BUILD_SWITCHES} (ctrl-c to cancel)\033[0m" && \

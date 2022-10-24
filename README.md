@@ -1,6 +1,4 @@
-# Steem-in-a-box forked and modified from @someguy123
-
-See post here for instructions: https://steemit.com/steem/@someguy123/your-guide-to-setting-up-a-witness-server-steem-in-a-box-hf19
+# Hive-in-a-box forked and modified from @someguy123
 
 # LICENSE
 

@@ -1,9 +1,9 @@
 - Install necessary packages with: ./run.sh preinstall
 - Added NTP synchronization: ./run.sh install_ntp
-- Get the steemd version from the running container with: ./run.sh version
+- Get the hived version from the running container with: ./run.sh version
 - Added memory cache and swappiness optimizations: ./run.sh optimize
 - Limit docker log to 100 MB.
-- In AppBase, the default data directory is now '/root/.steemd' instead of '/steem/witness_node_data_dir'. Specifying '--data-dir=/steem/witness_node_data_dir' to continue using the current data directory.
+- In AppBase, the default data directory is now '/root/.hived' instead of '/hive/witness_node_data_dir'. Specifying '--data-dir=/hive/witness_node_data_dir' to continue using the current data directory.
 - Updated .gitignore
 - Added config.ini templates: config.ini.example.master, config.ini.example.master.rpc, config.ini.example.stable
 - Pass the branch version as argument when building the docker image, e.g. ./run.sh build master
