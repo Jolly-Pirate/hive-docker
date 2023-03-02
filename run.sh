@@ -199,17 +199,17 @@ build() {
   fi
   if [[ $CONTAINER_TYPE == +(seed|witness|rpc) ]]; then
     echo $GREEN"Building image $BUILD_TAG"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --tag $BUILD_TAG .
+    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --tag $BUILD_TAG .
     BUILT_IMAGE=$BUILD_TAG
   fi
   if [[ $CONTAINER_TYPE == "fakenet" ]]; then
     echo $GREEN"Building image $BUILD_TAG_FAKENET"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_FAKENET --tag $BUILD_TAG_FAKENET .
+    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_FAKENET --tag $BUILD_TAG_FAKENET .
     BUILT_IMAGE=$BUILD_TAG_FAKENET
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
     echo $GREEN"Building image $BUILD_TAG_TESTNET"$RESET
-    docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
+    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
     BUILT_IMAGE=$BUILD_TAG_TESTNET
   fi
   echo $GREEN"Docker image built $BUILT_IMAGE"$RESET
