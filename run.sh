@@ -303,7 +303,7 @@ start() {
   fi
 
   # Synching from scratch
-  if [[ ! -f "$DATADIR/witness_node_data_dir/blockchain/block_log" ]]; then
+  if ! compgen -G "$DATADIR/witness_node_data_dir/blockchain/block_log*" > /dev/null; then
     RESYNCHING="true"
     CHECKPOINT='checkpoint = [68500000, "04153a20e4c2adff08d2fc7566fd26d7a28fd564"]'
     cat <<EOF

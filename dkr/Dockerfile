@@ -2,7 +2,7 @@
 # Stage 1
 # An ARG declared before a FROM is outside of a build stage, so it can't be used in any instruction after a FROM.
 ARG BUILD_OS
-FROM ${BUILD_OS} as build
+FROM ${BUILD_OS} AS build
 
 ARG BUILD_OS
 ARG BUILD_VERSION
@@ -21,7 +21,9 @@ apt-get update
 apt-get install -y curl nano net-tools wget jq tzdata \
 autoconf automake autotools-dev bsdmainutils build-essential cmake doxygen gdb git libboost-all-dev libyajl-dev \
 libreadline-dev libssl-dev libtool liblz4-tool ncurses-dev pkg-config python3 python3-dev python3-jinja2 python3-pip virtualenv \
-libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev ninja-build liburing-dev
+libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev ninja-build liburing-dev \
+gir1.2-glib-2.0 libgirepository-1.0-1 libglib2.0-0 libglib2.0-data libxml2 python3-lib2to3 python3-pkg-resources shared-mime-info xdg-user-dirs ca-certificates \
+     clang clang-tidy g++    make  libncurses5-dev perl zopfli xxd
 apt-get clean -qy
 EOF
 
