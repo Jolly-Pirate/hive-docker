@@ -315,8 +315,8 @@ EOF
     [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
       (
         if ! grep -q -e '^checkpoint.*04153a20e4c2adff08d2fc7566fd26d7a28fd564' $DATADIR/witness_node_data_dir/config.ini; then
-          echo $CHECKPOINT >>$DATADIR/witness_node_data_dir/config.ini
-          echo Added to config.ini: $CHECKPOINT
+          echo "$CHECKPOINT" >>$DATADIR/witness_node_data_dir/config.ini
+          echo "Added to config.ini: $CHECKPOINT"
         fi
 
         if [[ $CONTAINER_TYPE == "witness" ]]; then
