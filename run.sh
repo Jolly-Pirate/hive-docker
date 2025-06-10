@@ -112,6 +112,7 @@ help() {
   echo "    install_ntp - install and configure NTP synchronization"
   echo "    logs - live logs of the running container"
   echo "    preinstall - install linux utils packages"
+  echo "    optimize - optimize the swappiness, use that option if using a swapfile"
   echo "    remote_wallet - open cli_wallet in the container connecting to a remote seed"
   echo "    replay - start hive container in replay mode"
   echo "    restart - restart hive container"
