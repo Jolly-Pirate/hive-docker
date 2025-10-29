@@ -341,7 +341,7 @@ EOF
       echo "Re-enabling the witness line in the config.ini"
       sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^# witness/witness/g'
     fi
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir $FORCE_OPEN $CHAIN_ID_PARAM
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage $FORCE_OPEN $CHAIN_ID_PARAM
   fi
 
   sleep 1
@@ -371,10 +371,10 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000 $RPC_FEEDS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000 $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000
   fi
 
   sleep 1
@@ -391,7 +391,7 @@ snapshot() {
     case $1 in
     dump | load)
       stop
-      docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --$1-snapshot "$2"
+      docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --$1-snapshot "$2"
       #logs # monitor the snapshot
       sleep 1
       if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then

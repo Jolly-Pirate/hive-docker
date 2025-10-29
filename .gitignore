@@ -4,6 +4,7 @@
 **/*.tgz
 **/backup
 **/block_log*
+**/comments-rocksdb-storage
 **/compressed
 **/config.ini
 **/core
