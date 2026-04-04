@@ -19,7 +19,19 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$DIR/dkr"
 DATADIR="$DIR/data"
 BUILD_VERSION="$2"
+BUILD_CACHING=""
+
 REMOTE_WS="wss://api.deathwing.me"
+
+CURRENT_USER=$(id -nu)
+CURRENT_GROUP=$(id -ng)
+CURRENT_UID=$(id -u)
+CURRENT_GID=$(id -g)
+
+echo "Running script as $CURRENT_USER:$CURRENT_GROUP $CURRENT_UID:$CURRENT_GID"
+
+# If running as root, change permissions to user 1000, the docker image from the repo was built under that user
+# [ "$(id -u)" -eq 0 ] && chown -R 1000:1000 .
 
 # default. override in .env
 PORTS="2001"
@@ -200,17 +212,17 @@ build() {
   fi
   if [[ $CONTAINER_TYPE == +(seed|witness|rpc) ]]; then
     echo $GREEN"Building image $BUILD_TAG"$RESET
-    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --tag $BUILD_TAG .
+    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build $BUILD_CACHING --build-arg PUID=$CURRENT_UID --build-arg PGID=$CURRENT_GID --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --tag $BUILD_TAG .
     BUILT_IMAGE=$BUILD_TAG
   fi
   if [[ $CONTAINER_TYPE == "fakenet" ]]; then
     echo $GREEN"Building image $BUILD_TAG_FAKENET"$RESET
-    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_FAKENET --tag $BUILD_TAG_FAKENET .
+    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build $BUILD_CACHING --build-arg PUID=$CURRENT_UID --build-arg PGID=$CURRENT_GID --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_FAKENET --tag $BUILD_TAG_FAKENET .
     BUILT_IMAGE=$BUILD_TAG_FAKENET
   fi
   if [[ $CONTAINER_TYPE == "testnet" ]]; then
     echo $GREEN"Building image $BUILD_TAG_TESTNET"$RESET
-    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build --no-cache --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
+    DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build $BUILD_CACHING --build-arg PUID=$CURRENT_UID --build-arg PGID=$CURRENT_GID --build-arg BUILD_OS=$BUILD_OS --build-arg REPO_SOURCE=$REPO_SOURCE --build-arg BUILD_VERSION=$BUILD_VERSION --build-arg BUILD_SWITCHES=$BUILD_SWITCHES_TESTNET --tag $BUILD_TAG_TESTNET .
     BUILT_IMAGE=$BUILD_TAG_TESTNET
   fi
   echo $GREEN"Docker image built $BUILT_IMAGE"$RESET
@@ -225,7 +237,7 @@ dlblocks() {
   [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
     (
       echo "Removing old block log"
-      sudo rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
+      rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
     )
   read -e -p "Get compressed (c) or uncompressed (u) block_log? [C/u] " CU
   [[ $CU == "c" || $CU == "C" || $CU == "" ]] &&
@@ -304,7 +316,7 @@ start() {
   fi
 
   # Synching from scratch
-  if ! compgen -G "$DATADIR/witness_node_data_dir/blockchain/block_log*" > /dev/null; then
+  if ! compgen -G "$DATADIR/witness_node_data_dir/blockchain/block_log*" >/dev/null; then
     RESYNCHING="true"
     CHECKPOINT='checkpoint = [68500000, "04153a20e4c2adff08d2fc7566fd26d7a28fd564"]'
     cat <<EOF
@@ -341,7 +353,11 @@ EOF
       echo "Re-enabling the witness line in the config.ini"
       sed -i $DATADIR/witness_node_data_dir/config.ini -r -e 's/^# witness/witness/g'
     fi
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage $FORCE_OPEN $CHAIN_ID_PARAM
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d \
+      --user $CURRENT_UID:$CURRENT_GID \
+      --log-opt max-size=1g --log-opt max-file=1 \
+      --hostname $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION \
+      hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage $FORCE_OPEN $CHAIN_ID_PARAM
   fi
 
   sleep 1
@@ -371,10 +387,18 @@ replay() {
       RPC_TAGS=""
     fi
     echo $RPC_FEEDS $RPC_TAGS
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000 $RPC_FEEDS
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d \
+      --user $CURRENT_UID:$CURRENT_GID \
+      --log-opt max-size=1g --log-opt max-file=1 \
+      --name $DOCKER_NAME -t hive:$TAG_VERSION \
+      hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000 $RPC_FEEDS
   else
     echo "Replaying $CONTAINER_TYPE node..."
-    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000
+    docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d \
+      --user $CURRENT_UID:$CURRENT_GID \
+      --log-opt max-size=1g --log-opt max-file=1 \
+      --name $DOCKER_NAME -t hive:$TAG_VERSION \
+      hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --replay-blockchain $FORCE_REPLAY --set-benchmark-interval 100000
   fi
 
   sleep 1
@@ -391,21 +415,24 @@ snapshot() {
     case $1 in
     dump | load)
       stop
-      docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --$1-snapshot "$2"
+      docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d \
+        --user $CURRENT_UID:$CURRENT_GID \
+        --log-opt max-size=1g --log-opt max-file=1 \
+        --hostname $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION \
+        hived --data-dir=/hive/witness_node_data_dir --comments-rocksdb-path=/hive/witness_node_data_dir/comments-rocksdb-storage --$1-snapshot "$2"
       #logs # monitor the snapshot
       sleep 1
       if [[ $(docker inspect -f {{.State.Running}} $DOCKER_NAME) == true ]]; then
         echo $GREEN"Container $DOCKER_NAME successfully started"
         echo "Waiting for snapshot process to finish, you can ctrl-c this dialog and monitor it separately with: docker logs $DOCKER_NAME -f"$RESET
-        until docker logs $DOCKER_NAME --tail=100 | grep --color=always -i "State snapshot.*(real)"; do sleep 1; done # wait for snapshot to finish
-        # Get the block height and append it to the snapshot name (remove ANSI codes with sed and trim the line returns to get only the block number)
-        #blockheight=$(docker logs $DOCKER_NAME | grep "Current block number" | awk '{ print $NF }' | sed -r 's/\x1b\[[0-9;]*m//g' | tr -d '\r\n')
+        until docker logs $DOCKER_NAME --tail=100 | grep --color=always -i "State snapshot generation.*(real)"; do sleep 1; done # wait for snapshot to finish
         if [[ $1 == "dump" ]]; then
-          blockheight=$(cat data/state_snapshot_dump.json | jq ".total_measurement.block_number") # less complicated
+          LIB=$(docker logs $DOCKER_NAME | grep "Started on blockchain with" | awk -F'with | blocks' '{print $2}' | tail -1)
+          # blockheight=$(cat data/state_snapshot_dump.json | jq ".total_measurement.block_number") # state_snapshot_dump.json isn't created anymore?
           today=$(date '+%Y%m%d')
-          sudo mv "$DATADIR/witness_node_data_dir/snapshot/$2" "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight"
-          echo $GREEN$"Snapshot block height  : $blockheight"$RESET
-          echo $GREEN$"Snapshot size/location :" $(du -hs "$DATADIR/witness_node_data_dir/snapshot/$2-$today-blockheight-$blockheight")$RESET # get the size
+          mv "$DATADIR/witness_node_data_dir/snapshot/$2" "$DATADIR/witness_node_data_dir/snapshot/$2-$today-LIB-$LIB"
+          echo $GREEN$"Snapshot last irreversible block : $LIB"$RESET
+          echo $GREEN$"Snapshot size/location           :" $(du -hs "$DATADIR/witness_node_data_dir/snapshot/$2-$today-LIB-$LIB")$RESET # get the size
         fi
       else
         echo $RED"Container $DOCKER_NAME didn't start!"$RESET
@@ -415,14 +442,14 @@ snapshot() {
       if [[ -d "data/witness_node_data_dir/snapshot/$2" ]]; then
         echo $GREEN$"Packing snapshot '$2' to current folder"$RESET # get the size
         cd "data/witness_node_data_dir/snapshot"
-        sudo tar czvf "$curdir/$2.tgz" "$2"
+        tar czvf "$curdir/$2.tgz" "$2"
       else
         echo $RED"Snapshot $2 folder missing"$RESET
       fi
       ;;
     unpack)
       mkdir -p data/witness_node_data_dir/snapshot # create the folder if doesn't exist
-      sudo tar xzvf "$curdir/$2.tgz" -C "data/witness_node_data_dir/snapshot/"
+      tar xzvf "$curdir/$2.tgz" -C "data/witness_node_data_dir/snapshot/"
       ;;
     esac
   else
@@ -455,7 +482,7 @@ kill() {
 }
 
 enter() {
-  docker exec -it $DOCKER_NAME bash
+  docker exec -it --user $CURRENT_UID:$CURRENT_GID $DOCKER_NAME bash
 }
 
 save() {
@@ -477,7 +504,7 @@ save() {
 }
 
 load() {
-  sudo rm /dev/shm/shared_memory.bin
+  rm /dev/shm/shared_memory.bin
   rsync -aAHXPh -v --stats shared_memory.bin /dev/shm/
   start
 }
@@ -485,12 +512,16 @@ load() {
 compress() {
   stop
   mkdir -p $DATADIR/witness_node_data_dir/blockchain/compressed
-  docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d --log-opt max-size=1g --log-opt max-file=1 -h $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION compress_block_log -j$(expr $(nproc) - 2) --benchmark-decompression -i /hive/witness_node_data_dir/blockchain -o /hive/witness_node_data_dir/blockchain/compressed
+  docker run $DPORTS -v $SHM_DIR:/shm -v "$DATADIR":/hive -d \
+    --user $CURRENT_UID:$CURRENT_GID \
+    --log-opt max-size=1g --log-opt max-file=1 \
+    --hostname $DOCKER_NAME --name $DOCKER_NAME -t hive:$TAG_VERSION \
+    compress_block_log -j$(expr $(nproc) - 2) --benchmark-decompression -i /hive/witness_node_data_dir/blockchain -o /hive/witness_node_data_dir/blockchain/compressed
   logs
 }
 
 wallet() {
-  docker exec -it $DOCKER_NAME cli_wallet
+  docker exec -it --user $CURRENT_UID:$CURRENT_GID $DOCKER_NAME cli_wallet
 }
 
 # Usage: ./run.sh remote_wallet [wss_server]
@@ -506,7 +537,7 @@ remote_wallet() {
   if (($# >= 1)); then
     REMOTE_WS="$1"
   fi
-  docker run -v "$DATADIR":/hive --rm -it --name remote_wallet hive:$TAG_VERSION cli_wallet -s "$REMOTE_WS"
+  docker run -v "$DATADIR":/hive --user $CURRENT_UID:$CURRENT_GID --rm -it --name remote_wallet hive:$TAG_VERSION cli_wallet -s "$REMOTE_WS"
 }
 
 logs() {

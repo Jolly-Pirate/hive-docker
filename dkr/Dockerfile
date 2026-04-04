@@ -23,21 +23,30 @@ autoconf automake autotools-dev bsdmainutils build-essential cmake doxygen gdb g
 libreadline-dev libssl-dev libtool liblz4-tool ncurses-dev pkg-config python3 python3-dev python3-jinja2 python3-pip virtualenv \
 libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev ninja-build liburing-dev \
 gir1.2-glib-2.0 libgirepository-1.0-1 libglib2.0-0 libglib2.0-data libxml2 python3-lib2to3 python3-pkg-resources shared-mime-info xdg-user-dirs ca-certificates \
-     clang clang-tidy g++    make  libncurses5-dev perl zopfli xxd
+clang clang-tidy g++ make libncurses5-dev perl zopfli xxd python3-setuptools
 apt-get clean -qy
 EOF
 
+WORKDIR /clonedir
+
 RUN <<EOF
-echo "Building hived $BUILD_VERSION in $BUILD_OS from $REPO_SOURCE (ctrl-c to cancel)"
-sleep 5
-cd ~
-git clone ${REPO_SOURCE} clonedir
-cd clonedir
-git checkout ${BUILD_VERSION}
-git submodule update --init --recursive
+echo "Cloning hived $BUILD_VERSION from $REPO_SOURCE (ctrl-c to cancel)"
+echo "Current folder: $(pwd)"
+sleep 2
+# much faster to download when specifying depth and branch
+git clone --depth 1 --branch ${BUILD_VERSION} ${REPO_SOURCE} .
+# git checkout ${BUILD_VERSION}
+git submodule update --init --recursive --depth 1
 # apply the custom patches
 /patch.sh
+EOF
+
+RUN <<EOF
+echo "Building hived $BUILD_VERSION in $BUILD_OS (ctrl-c to cancel)"
+echo "Current folder: $(pwd)"
+sleep 2
 mkdir build && cd build
+# can simplify with: cmake -S . -B build
 cmake -DCMAKE_BUILD_TYPE=Release -GNinja .. $BUILD_SWITCHES
 ninja
 #make -j`expr $(nproc) - 2`
