@@ -117,7 +117,8 @@ help() {
   echo
   echo "Commands: "
   echo "    build <version> - build hive container (seed, witness, rpc, fakenet, testnet)"
-  echo "    dlblocks - download and decompress the blockchain file"
+  echo "    dlblocks - download the blockchain file (compressed)"
+  echo "    clean - delete blockchain, comments-rocksdb-storage and shared_memory.bin"
   echo "    enter - enter a bash session in the container"
   echo "    install - pull latest docker image from server (no compiling)"
   echo "    install_docker - install docker"
@@ -239,25 +240,31 @@ dlblocks() {
       echo "Removing old block log"
       rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
     )
-  read -e -p "Get compressed (c) or uncompressed (u) block_log? [C/u] " CU
-  [[ $CU == "c" || $CU == "C" || $CU == "" ]] &&
+  read -e -p "Download compressed block_log? [Y/n] " YN
+  [[ $YN == "y" || $YN == "Y" || $YN == "" ]] &&
     (
       echo "Downloading compressed block_log..."
-      wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
-      wget -c https://gtg.openhive.network/get/blockchain/compressed/block_log.artifacts -O $DATADIR/witness_node_data_dir/blockchain/block_log.artifacts
-    )
-  [[ $CU == "u" || $CU == "U" ]] &&
-    (
-      echo "Downloading uncompressed block_log..."
       wget -c https://gtg.openhive.network/get/blockchain/block_log -O $DATADIR/witness_node_data_dir/blockchain/block_log
-      wget -c https://gtg.openhive.network/get/blockchain/block_log.index -O $DATADIR/witness_node_data_dir/blockchain/block_log.index
+      wget -c https://gtg.openhive.network/get/blockchain/block_log.artifacts -O $DATADIR/witness_node_data_dir/blockchain/block_log.artifacts
+
+      echo "FINISHED. Blockchain downloaded"
+      echo "Remember to resize your /dev/shm, and run with replay!"
+      echo "$ ./run.sh shm_size SIZE (e.g. 20G)"
+      echo "$ ./run.sh replay"
     )
-  echo "FINISHED. Blockchain downloaded"
-  echo "Remember to resize your /dev/shm, and run with replay!"
-  echo "$ ./run.sh shm_size SIZE (e.g. 20G)"
-  echo "$ ./run.sh replay"
 }
 
+clean () {
+  read -e -p $RED$BOLD"CAUTION! Delete blockchain, comments-rocksdb-storage and shared_memory.bin? [N/y] "$RESET YN
+  [[ $YN == "y" || $YN == "Y" ]] &&
+    (
+      rm -f $DATADIR/witness_node_data_dir/blockchain/block_log*
+      rm -rf $DATADIR/witness_node_data_dir/comments-rocksdb-storage
+      rm -f $SHM_DIR/shared_memory.bin
+      echo "Blockchain data is deleted. Proceed with downloading a fresh block_log or start synching from scratch."
+    )
+
+}
 install_docker() {
   #get latest version
   curl https://get.docker.com | sh
@@ -646,6 +653,9 @@ preinstall)
   ;;
 install_ntp)
   install_ntp
+  ;;
+clean)
+  clean
   ;;
 *)
   echo "Invalid cmd"
