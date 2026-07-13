@@ -6,13 +6,15 @@ FROM ${BUILD_OS} AS build
 
 ARG BUILD_OS
 ARG BUILD_VERSION
-ARG BUILD_SWITCHES
+ARG BUILD_SWITCHES==""
 ARG REPO_SOURCE
 
 ADD patch.sh /
 
 ENV LANG=en_US.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
+
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 RUN <<EOF
 echo "Installing packages (ctrl-c to cancel)"
@@ -45,27 +47,33 @@ RUN <<EOF
 echo "Building hived $BUILD_VERSION in $BUILD_OS (ctrl-c to cancel)"
 echo "Current folder: $(pwd)"
 sleep 2
-mkdir build && cd build
+mkdir -pv build && cd build
 # can simplify with: cmake -S . -B build
 cmake -DCMAKE_BUILD_TYPE=Release -GNinja .. $BUILD_SWITCHES
-ninja
+ninja -j`expr $(nproc) - 2`
 #make -j`expr $(nproc) - 2`
 # install defaults to /usr/bin
 #ninja install
-DESTDIR=/output ninja install
+#DESTDIR=/output ninja install
 #cd .. && rm -rf build
+
+# Fix for v1.28.7 that does not build all the utils, e.g. size_checker
+# so "ninja install" fails. Only copy the built binaries
+mkdir -pv /output
+find programs -type f -executable -exec cp {} /output/ \;
 EOF
 
 RUN <<EOF
+ls -alp /output
 echo "Total size of built binaries"
-du -hs /output/usr/bin
+du -hs /output
 sleep 5
 EOF
 
 # Stage 2
 FROM ${BUILD_OS}
 #COPY --from=build /output /
-COPY --from=build /output/usr/bin /usr/bin/
+COPY --from=build /output /usr/bin/
 
 # P2P (seed) port
 EXPOSE 2001

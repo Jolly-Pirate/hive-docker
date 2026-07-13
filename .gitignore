@@ -1,6 +1,7 @@
 **/*.*~
 **/*.bak
 **/*.json
+**/*.log
 **/*.tgz
 **/backup
 **/block_log*
